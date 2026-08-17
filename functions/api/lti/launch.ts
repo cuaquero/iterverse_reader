@@ -1,4 +1,5 @@
 import { appBaseUrl, createSession } from "../../lib/session";
+import { isAllowedEmail } from "../../lib/oauth";
 import {
   checkOrPinDeployment,
   consumeLtiLoginState,
@@ -41,6 +42,13 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return new Response(`Launch failed: ${(err as Error).message}`, { status: 403 });
   }
 
+  if (!isAllowedEmail(claims.email, ctx.env.ALLOWED_EMAIL_DOMAIN)) {
+    return new Response(
+      `Access is limited to @${ctx.env.ALLOWED_EMAIL_DOMAIN} accounts. Launched as ${claims.email}.`,
+      { status: 403 }
+    );
+  }
+
   const deploymentOk = await checkOrPinDeployment(ctx.env.DB, platform, claims.deploymentId);
   if (!deploymentOk) {
     return new Response(
@@ -73,8 +81,13 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   // logged) and let /lti/bridge exchange it client-side. See LTI.md.
   const handoffCode = await createLtiHandoff(ctx.env, sessionId);
 
+  // The app uses HashRouter, so "/lti/bridge" only ever exists client-side --
+  // the server sees a request for "/" no matter what follows the "#". The
+  // `lti_launch` query param is what functions/_middleware.ts's under-
+  // construction gate actually keys off of to let this one redirect through
+  // without exposing the rest of the (still unfinished) app. See LTI.md.
   return new Response(null, {
     status: 302,
-    headers: { Location: `${base}/#/lti/bridge?code=${handoffCode}` },
+    headers: { Location: `${base}/?lti_launch=1#/lti/bridge?code=${handoffCode}` },
   });
 };

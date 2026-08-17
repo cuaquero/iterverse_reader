@@ -7,8 +7,23 @@ import { appBaseUrl } from "../../lib/session";
 // description back to Canvas's registration_endpoint using the token as
 // bearer auth, and store the resulting client_id/endpoints so
 // /api/lti/login and /api/lti/launch can find this platform by issuer.
+//
+// Unlike a real launch, this endpoint has no platform to check credentials
+// against yet -- it's what CREATES that trust relationship in the first
+// place, so it can't require a session or a registered issuer. Instead it's
+// gated behind LTI_REGISTRATION_SECRET, a value only ever shared directly
+// with whoever is doing the registration (see LTI.md), so a stray visitor
+// can't get this endpoint to fetch/POST to URLs of their choosing.
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
+
+  if (
+    !ctx.env.LTI_REGISTRATION_SECRET ||
+    url.searchParams.get("key") !== ctx.env.LTI_REGISTRATION_SECRET
+  ) {
+    return new Response("Not found.", { status: 404 });
+  }
+
   const openIdConfigUrl = url.searchParams.get("openid_configuration");
   const registrationToken = url.searchParams.get("registration_token");
 
@@ -50,6 +65,12 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
         {
           type: "LtiResourceLinkRequest",
           target_link_uri: `${base}/manager/home`,
+          label: "Reader",
+          // Canvas-specific: which placements to enable this tool for. Without
+          // this, Canvas registers the tool but gives admins/instructors
+          // nowhere to actually add it to a course. course_navigation puts a
+          // persistent "Reader" link in every course's left-hand nav.
+          placements: ["course_navigation"],
         },
       ],
     },

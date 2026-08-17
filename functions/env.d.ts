@@ -14,4 +14,8 @@ interface Env {
   // assertions with the private half. Generate once; see LTI.md.
   LTI_TOOL_PUBLIC_JWK?: string; // JSON-encoded public JWK
   LTI_TOOL_PRIVATE_KEY?: string; // PKCS8 PEM, kept secret
+  // Required as a `?key=` query param on /api/lti/register — that endpoint
+  // has no other way to distinguish your Canvas admin from anyone else who
+  // finds the URL, since it's what establishes trust in the first place.
+  LTI_REGISTRATION_SECRET?: string;
 }

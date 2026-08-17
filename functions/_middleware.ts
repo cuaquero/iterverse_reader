@@ -82,6 +82,15 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
   if (url.pathname.startsWith("/api/")) {
     return ctx.next();
   }
+  // Narrow exception for the LTI launch handoff (see functions/api/lti/launch.ts):
+  // the app uses HashRouter, so "/lti/bridge" is never an actual server-side
+  // path -- every client route resolves to a request for "/" here, and this
+  // query param is the only way to single out just that one redirect. It's
+  // server-generated, not something a visitor would stumble into, and letting
+  // it through only exposes the app shell, not any real data.
+  if (url.searchParams.has("lti_launch")) {
+    return ctx.next();
+  }
   return new Response(PAGE, {
     status: 200,
     headers: { "content-type": "text/html; charset=utf-8" },
