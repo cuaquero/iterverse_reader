@@ -17,6 +17,7 @@ export async function streamR2Object(
     object.writeHttpMetadata(headers);
     headers.set("etag", object.httpEtag);
     headers.set("accept-ranges", "bytes");
+    headers.set("x-content-type-options", "nosniff");
     return new Response(object.body, { status: 200, headers });
   }
 
@@ -36,6 +37,7 @@ export async function streamR2Object(
   headers.set("accept-ranges", "bytes");
   headers.set("content-length", String(length));
   headers.set("content-range", `bytes ${offset}-${offset + length - 1}/${total}`);
+  headers.set("x-content-type-options", "nosniff");
   return new Response(object.body, { status: 206, headers });
 }
 

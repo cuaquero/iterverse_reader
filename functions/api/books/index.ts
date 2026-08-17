@@ -6,6 +6,40 @@ const SUPPORTED_FORMATS = new Set([
   "html", "xml", "xhtml", "mhtml", "htm",
 ]);
 
+// Content-Type stored on the R2 object is derived from this map, never from
+// the uploader's declared file.type — that header is attacker-controlled and
+// streamR2Object() echoes it back verbatim, so trusting it lets an upload of
+// e.g. "book.epub" with Content-Type: text/html render as HTML (stored XSS)
+// to any signed-in user who opens the file/cover URL directly.
+const CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  epub: "application/epub+zip",
+  pdf: "application/pdf",
+  mobi: "application/x-mobipocket-ebook",
+  azw3: "application/vnd.amazon.ebook",
+  azw: "application/vnd.amazon.ebook",
+  txt: "text/plain",
+  fb2: "application/x-fictionbook+xml",
+  cbr: "application/vnd.comicbook-rar",
+  cbz: "application/vnd.comicbook+zip",
+  cbt: "application/x-tar",
+  cb7: "application/x-7z-compressed",
+  md: "text/plain",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  html: "text/plain",
+  xml: "text/plain",
+  xhtml: "text/plain",
+  mhtml: "text/plain",
+  htm: "text/plain",
+};
+
+const COVER_CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+};
+
 interface BookRow {
   id: string;
   title: string;
@@ -75,7 +109,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const fileKey = `books/${id}/file.${ext}`;
 
   await ctx.env.BOOK_FILES.put(fileKey, file.stream(), {
-    httpMetadata: { contentType: file.type || "application/octet-stream" },
+    httpMetadata: { contentType: CONTENT_TYPE_BY_EXT[ext] || "application/octet-stream" },
   });
 
   let coverKey: string | null = null;
@@ -83,7 +117,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     const coverExt = (cover.name.split(".").pop() || "jpg").toLowerCase();
     coverKey = `books/${id}/cover.${coverExt}`;
     await ctx.env.BOOK_FILES.put(coverKey, cover.stream(), {
-      httpMetadata: { contentType: cover.type || "image/jpeg" },
+      httpMetadata: { contentType: COVER_CONTENT_TYPE_BY_EXT[coverExt] || "image/jpeg" },
     });
   }
 
