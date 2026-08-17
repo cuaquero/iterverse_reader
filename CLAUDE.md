@@ -4,107 +4,121 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-本仓库（koodo-bridge）是 Koodo Reader 的 BTECH（Bridgerland Technical College）定制分支：一个纯 Web 电子书阅读器（React CRA + Redux），面向 Cloudflare 部署并计划嵌入 Canvas LMS（通过 LTI）。
+This repo (koodo-bridge) is a BTECH (Bridgerland Technical College) customization fork of Koodo Reader: a pure web ebook reader (React CRA + Redux), deployed on Cloudflare (`books.itstem.org`), with plans to embed it in Canvas LMS via LTI (not started yet).
 
-**重要变更**：上游 Koodo Reader 是跨平台 Electron 应用，但本分支已完全移除 Electron 打包 —— 没有 `main.js`、没有原生 SQLite（better-sqlite3）、没有桌面安装包/IPC 通道。所有数据库操作现在都走浏览器端存储（IndexedDB via `localforage`，或 File System Access API 用于本地文件夹同步），详见 `src/utils/storage/databaseService.ts` 的非 Electron 分支。代码中仍大量存在 `isElectron`（来自 `react-device-detect`）判断分支和 `window.require("electron")` 调用 —— 这些在本分支中永远不会执行（`isElectron` 恒为 `false`），是有意保留的死代码，而非 bug；除非有新的理由重新引入 Electron，否则不需要清理它们。
+**Important change**: upstream Koodo Reader is a cross-platform Electron app, but this fork has completely removed Electron packaging — no `main.js`, no native SQLite (better-sqlite3), no desktop installers/IPC channels. All database operations now go through browser-side storage (IndexedDB via `localforage`, or the File System Access API for local-folder sync) — see the non-Electron branch of `src/utils/storage/databaseService.ts`. The code still has plenty of `isElectron` (from `react-device-detect`) branches and `window.require("electron")` calls — these never execute in this fork (`isElectron` is always `false`) and are intentionally-left dead code, not bugs. No need to clean them up unless there's a new reason to bring Electron back.
 
-### 三层架构
+**Cloudflare backend**: `functions/` holds a set of Pages Functions (Google/Microsoft OAuth login, a generic sync API keyed by `dbName`, a shared book-catalog API), backed by D1 (`migrations/`), R2, and KV. See **[CLOUDFLARE.md](./CLOUDFLARE.md)** for the full picture — required secrets, local dev, migrations, deployment. **The client isn't wired up to this backend yet** (login buttons still point at Koodo's own backend, `DatabaseService` still uses `localforage`) because the OAuth app registrations are waiting on BTECH's approval. In the meantime, `functions/_middleware.ts` intercepts every request outside `/api/*` with a temporary "under construction" page — that's intentional, not a bug, so don't delete it by accident, but also don't forget to remove it before actually going live.
 
-| 层 | 位置 | 职责 |
-|---|------|------|
-| React 应用 | `src/` | UI, Redux 状态管理, 书籍渲染, 浏览器端存储 |
-| 阅读引擎 | `src/assets/lib/kookit-extra.min.mjs` | 闭源 ESM — 书籍解析、SQL 语句、同步工具 |
-| Go HTTP 服务 | `httpserver/` | 可选的 KOReader / OPDS 集成 |
+### Architecture Layers
 
-## 重要提醒
+| Layer | Location | Responsibility |
+|---|---|---|
+| React app | `src/` | UI, Redux state, book rendering |
+| Cloudflare backend | `functions/`, `migrations/`, `wrangler.jsonc` | OAuth login, data sync API, shared book-catalog API (see CLOUDFLARE.md) |
+| Reading engine | `src/assets/lib/kookit-extra.min.mjs` | Closed-source ESM — book parsing, SQL statements, sync utilities |
+| Go HTTP service | `httpserver/` | Optional KOReader / OPDS integration |
 
-**不要**尝试读取 `src/assets/lib/` 下的这些文件：
+## Important Reminders
+
+**Do not** try to read these files under `src/assets/lib/`:
 - `kookit-extra.min.mjs`
 - `kookit.min.js`
 - `kookit-extra-browser.min.js`
 
-这些是混淆/压缩后的产物，无法阅读。如需查阅源码，请直接读取本地源码仓库：
+These are obfuscated/minified build artifacts and unreadable. To check the source, read the local source repos directly:
 - `D:\Project\kookit`
 - `D:\Project\kookit-extra`
 
-### Redux 切片
+### Redux Slices
 
 `book`, `reader`, `manager`, `viewArea`, `backupPage`, `sidebar`, `progressPanel`
 
-每个切片在 `src/store/actions/` 和 `src/store/reducers/` 中各有一个文件。
+Each slice has one file in `src/store/actions/` and one in `src/store/reducers/`.
 
-### Redux State 类型
+### Redux State Type
 
-`stateType` 定义在 `src/store/index.tsx` 中，所有 `mapStateToProps` 应使用此类型。
+`stateType` is defined in `src/store/index.tsx`; all `mapStateToProps` should use this type.
 
-### Container 模式
+### Container Pattern
 
-`index.tsx` (Redux connect) → `component.tsx` → `interface.tsx`，位于 `src/containers/` 下。
+`index.tsx` (Redux connect) → `component.tsx` → `interface.tsx`, under `src/containers/`.
 
-### 页面路由
+### Page Routes
 
-- `/manager/*` — 主界面（书库、笔记、回收站等）
-- `/epub`, `/pdf`, `/mobi`, `/txt`, `/md` 等格式路径 — 阅读器
+- `/manager/*` — main UI (library, notes, trash, etc.)
+- `/epub`, `/pdf`, `/mobi`, `/txt`, `/md`, etc. — reader, by format
 - `/login`, `/stats`, `/redirect`
 
-### 支持的电子书格式
+### Supported Ebook Formats
 
 EPUB, PDF, MOBI, AZW3, AZW, TXT, FB2, CBR/CBZ/CBT/CB7, MD, DOCX, HTML/XML/XHTML/MHTML/HTM
 
-## 常用命令
+## Common Commands
 
 ```bash
-# 安装依赖（初次）
+# Install dependencies (first time)
 yarn
 
-# 开发模式（浏览器热重载）
+# Dev mode (browser hot reload)
 yarn start
 
-# 构建生产版本（静态文件，用于 Cloudflare Pages 等部署）
+# Production build (static files, for Cloudflare Pages etc.)
 yarn build
 
-# 运行测试
+# Run tests
 yarn test
 ```
 
-## 开发规范
+Deployment, migration, and local-dev commands for the Cloudflare backend (Functions/D1/R2/KV) live in [CLOUDFLARE.md](./CLOUDFLARE.md) — not duplicated here.
 
-- 用户可见文本必须使用 `react-i18next` 的 `t("key")`，不得硬编码
-- TypeScript 避免 `any`，在 `interface.tsx` 中定义类型
-- 状态类型用 `stateType`（`src/store/index.tsx`）
-- 数据库操作通过 `src/utils/storage/databaseService.ts`（浏览器端 IndexedDB/localforage），不要引入新的 Electron/IPC 依赖
-- 新增 i18n key 需在 `src/assets/locales/en.json` 中添加
-- Reader 工具函数（`src/utils/reader/`）会影响 iframe 中书籍渲染，修改后需手动回归测试
-- 不要将令牌、密码或完整书籍路径记录到 info 级别日志
+## Development Guidelines
 
-## 项目结构
+- User-visible text must use `react-i18next`'s `t("key")`, never hardcoded
+- Avoid TypeScript `any`; define types in `interface.tsx`
+- Use the `stateType` type for state (`src/store/index.tsx`)
+- Database operations go through `src/utils/storage/databaseService.ts` (browser-side IndexedDB/localforage) — don't introduce new Electron/IPC dependencies
+- New i18n keys need to be added to `src/assets/locales/en.json`
+- Reader utility functions (`src/utils/reader/`) affect book rendering inside the iframe — regression-test manually after changes
+- Never log tokens, passwords, or full book paths at info level
+
+## Project Structure
 
 ```
 .
-├── httpserver/             # Go HTTP 服务 (KOReader/OPDS)
-├── public/                 # 静态资源 + WASM 库 (7z, unrar, pdfjs)
+├── functions/              # Cloudflare Pages Functions (see CLOUDFLARE.md)
+│   ├── _middleware.ts      # ⚠️ currently intercepts everything outside /api/* with an "under construction" page
+│   ├── api/
+│   │   ├── auth/           # Google/Microsoft OAuth login + session
+│   │   ├── db/[dbName].ts  # Generic sync API, mirrors DatabaseService's web branch
+│   │   └── books/          # Shared book-catalog API (list/upload/download; admin-only add/remove)
+│   └── lib/                # Shared helpers (session, oauth, auth checks, R2 streaming)
+├── migrations/             # D1 database migrations (wrangler d1 migrations)
+├── wrangler.jsonc          # Cloudflare Pages config (D1/R2/KV bindings)
+├── httpserver/             # Go HTTP service (KOReader/OPDS)
+├── public/                 # Static assets + WASM libs (7z, unrar, pdfjs)
 ├── src/
 │   ├── assets/
-│   │   ├── lib/            # 阅读引擎 (kookit-extra.min.mjs) + 类型定义
-│   │   ├── locales/        # 多语言翻译 JSON (40+ 语言)
-│   │   ├── styles/         # 全局 CSS
-│   │   └── images/         # 图片资源
-│   ├── components/         # 可复用 UI 组件
-│   ├── constants/          # 常量定义
-│   ├── containers/         # 容器组件 (Redux stateful)
-│   │   ├── lists/          # 列表 (bookList, cardList, noteList, navList, contentList)
-│   │   ├── panels/         # 面板 (navigationPanel, operationPanel, progressPanel, settingPanel)
-│   │   ├── settings/       # 设置页面各选项卡
-│   │   ├── sidebar/        # 侧边栏
-│   │   └── viewer/         # 书籍阅读视图
-│   ├── models/             # 数据模型 (Book, Bookmark, Note, HtmlBook, Plugin)
-│   ├── pages/              # 页面级组件 (manager, reader, login, redirect, stats)
-│   ├── router/             # React Router 路由配置
+│   │   ├── lib/            # Reading engine (kookit-extra.min.mjs) + type definitions
+│   │   ├── locales/        # Translation JSON (40+ languages)
+│   │   ├── styles/         # Global CSS
+│   │   └── images/         # Image assets
+│   ├── components/         # Reusable UI components
+│   ├── constants/          # Constants
+│   ├── containers/         # Container components (Redux stateful)
+│   │   ├── lists/          # Lists (bookList, cardList, noteList, navList, contentList)
+│   │   ├── panels/         # Panels (navigationPanel, operationPanel, progressPanel, settingPanel)
+│   │   ├── settings/       # Settings page tabs
+│   │   ├── sidebar/        # Sidebar
+│   │   └── viewer/         # Book reading view
+│   ├── models/             # Data models (Book, Bookmark, Note, HtmlBook, Plugin)
+│   ├── pages/              # Page-level components (manager, reader, login, redirect, stats)
+│   ├── router/             # React Router config
 │   ├── store/              # Redux (actions + reducers)
-│   └── utils/              # 工具函数
-│       ├── file/           # 文件操作 (bookUtil, coverUtil, fontUtil, sqlUtil, export, backup, restore)
-│       ├── reader/         # 阅读器逻辑 (highlightUtil, noteUtil, styleUtil, ttsUtil, themeUtil, etc.)
-│       ├── request/        # HTTP 请求
-│       └── storage/        # 存储服务 (databaseService, syncService)
-└── scripts/                # i18n 工具脚本 (extract-untranslated, merge-translations)
+│   └── utils/              # Utilities
+│       ├── file/           # File operations (bookUtil, coverUtil, fontUtil, sqlUtil, export, backup, restore)
+│       ├── reader/         # Reader logic (highlightUtil, noteUtil, styleUtil, ttsUtil, themeUtil, etc.)
+│       ├── request/        # HTTP requests
+│       └── storage/        # Storage services (databaseService, syncService)
+└── scripts/                # i18n tooling scripts (extract-untranslated, merge-translations)
 ```
