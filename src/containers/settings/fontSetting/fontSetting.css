@@ -30,7 +30,7 @@
 }
 
 .font-setting-item.active-font-item {
-  border-color: var(--color-theme-color, #0179ca);
+  border-color: var(--color-theme-color, var(--btech-red));
 }
 
 .font-setting-badge {

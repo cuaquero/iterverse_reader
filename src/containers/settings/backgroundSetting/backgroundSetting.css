@@ -25,7 +25,7 @@
 }
 
 .background-setting-item.active-bg-item {
-  border-color: var(--color-theme-color, #0179ca);
+  border-color: var(--color-theme-color, var(--btech-red));
 }
 
 .background-setting-img {

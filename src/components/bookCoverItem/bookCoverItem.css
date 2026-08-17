@@ -29,7 +29,7 @@
 .book-cover-status-actions .book-top-action {
   font-size: 14px;
   opacity: 1;
-  color: #77a2da;
+  color: var(--btech-red);
 }
 .book-cover-item-cover {
   /* height: 170px; */

@@ -75,8 +75,7 @@ body {
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+  font-family: var(--btech-font-sans) !important;
   overflow-x: hidden !important;
   /* font-weight: 500; */
 }
@@ -91,7 +90,7 @@ option {
 /* --背景色字体颜色--*/
 option:hover {
   color: #fff;
-  background-color: #1e90ff;
+  background-color: var(--btech-red);
 }
 .epub-container {
   overflow-x: hidden !important;
@@ -100,8 +99,7 @@ input,
 textarea,
 input::placeholder,
 textarea::placeholder {
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+  font-family: var(--btech-font-sans) !important;
   font-weight: 500 !important;
   line-height: 1.25 !important;
 }

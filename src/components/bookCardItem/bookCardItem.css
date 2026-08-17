@@ -83,7 +83,7 @@
 .book-top-action {
   font-size: 13px;
   opacity: 1;
-  color: #77a2da;
+  color: var(--btech-red);
 }
 .book-download-action {
   /* position: absolute;

@@ -22,6 +22,12 @@
   position: absolute;
   top: 30px;
   left: 30px;
+  /* BTECH's brand guide says the logo must never sit directly on a photo;
+     this plate keeps it on a solid ground while it still overlays the cover image. */
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(35, 35, 38, 0.15);
 }
 .login-cover-img {
   position: absolute;

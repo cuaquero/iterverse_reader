@@ -71,22 +71,6 @@ class Login extends React.Component<LoginProps, LoginState> {
       }
     }
   }
-  UNSAFE_componentWillReceiveProps(
-    nextProps: Readonly<LoginProps>,
-    nextContext: any
-  ): void {
-    if (
-      nextProps.isShowSupport &&
-      nextProps.isShowSupport !== this.props.isShowSupport
-    ) {
-      toast(
-        this.props.t(
-          "Your Pro trial has expired, please renew it to continue using the Pro features"
-        )
-      );
-      this.props.history.push("/manager/home");
-    }
-  }
   handleLogin = async (code: string, service: string) => {
     if (!service || !code) {
       toast.error(this.props.t("Missing parameters") + this.props.t("Token"));
@@ -173,7 +157,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />
@@ -232,7 +216,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />
@@ -308,7 +292,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />
@@ -466,7 +450,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />
@@ -599,7 +583,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />
@@ -665,7 +649,7 @@ class Login extends React.Component<LoginProps, LoginState> {
             >
               <div className="login-logo">
                 <img
-                  src={require("../../assets/images/logo-login.png")}
+                  src={require("../../assets/images/btech/logo-horizontal.png")}
                   alt="logo"
                   className="login-logo-img"
                 />

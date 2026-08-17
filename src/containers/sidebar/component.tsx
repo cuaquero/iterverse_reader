@@ -1,5 +1,6 @@
 import React from "react";
 import "./sidebar.css";
+import BtechMark from "../../components/btechMark";
 import { sideMenu } from "../../constants/sideMenu";
 import { SidebarProps, SidebarState } from "./interface";
 import { withRouter } from "react-router-dom";
@@ -385,28 +386,19 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
             <span className="icon-menu sidebar-list"></span>
           </div>
 
-          <img
-            src={
+          <BtechMark
+            color={
               ConfigService.getReaderConfig("appSkin") === "night" ||
               (ConfigService.getReaderConfig("appSkin") === "system" &&
                 ConfigService.getReaderConfig("isOSNight") === "yes")
-                ? require(
-                    `../../assets/images/logo-dark${
-                      this.props.isAuthed ? "-pro" : ""
-                    }.png`
-                  )
-                : require(
-                    `../../assets/images/logo-light${
-                      this.props.isAuthed ? "-pro" : ""
-                    }.png`
-                  )
+                ? "#ffffff"
+                : "#d22030"
             }
-            alt=""
+            className="logo btech-mark"
             onClick={() => {
               this.handleJump(getWebsiteUrl());
             }}
             style={this.state.isCollapsed ? { display: "none" } : {}}
-            className="logo"
           />
           <div
             className="side-menu-container-parent"

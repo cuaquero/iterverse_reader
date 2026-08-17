@@ -10,6 +10,12 @@
   left: 70px;
   cursor: pointer;
 }
+.btech-mark {
+  /* BTECH hexagonal "b" mark is roughly square; the koodo wordmark this
+     replaces was wide and short, so it needs its own, smaller footprint
+     to avoid overlapping the nav list that starts at top: 85px. */
+  width: 40px;
+}
 .side-menu-container-parent {
   position: relative;
   top: 85px;

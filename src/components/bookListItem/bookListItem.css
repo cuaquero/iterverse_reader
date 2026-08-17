@@ -77,7 +77,7 @@
 .book-item-list-top {
   font-size: 14px;
   opacity: 1;
-  color: #77a2da;
+  color: var(--btech-red);
 }
 .book-item-list-config {
   cursor: pointer;

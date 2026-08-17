@@ -129,7 +129,7 @@
 
 .chapter-setting-input:focus {
   outline: none;
-  border-color: var(--color-theme-color, #0179ca);
+  border-color: var(--color-theme-color, var(--btech-red));
 }
 
 .chapter-setting-form-btns {
@@ -153,7 +153,7 @@
   padding: 7px 18px;
   border-radius: 7px;
   border: none;
-  background: var(--color-theme-color, #0179ca);
+  background: var(--color-theme-color, var(--btech-red));
   color: #fff;
   cursor: pointer;
   font-size: 14px;

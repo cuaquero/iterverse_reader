@@ -1,0 +1,36 @@
+/* BTECH brand tokens — colors and typeface, sourced from the BTECH Style Guide
+   - Logos and Branding (2019). Core palette: red, charcoal, white. */
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./fonts/btech/Roboto-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("./fonts/btech/Roboto-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Roboto";
+  src: url("./fonts/btech/Roboto-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --btech-red: #d22030;
+  --btech-red-dark: #a81826;
+  --btech-red-light: #e24351;
+  --btech-gray: #36393b;
+  --btech-gray-dark: #232526;
+  --btech-gray-light: #6a6d70;
+
+  --btech-font-sans: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif;
+}

@@ -207,7 +207,7 @@
   font-size: 15px;
   margin: 7px 10px;
   text-align: center;
-  color: #0078d4;
+  color: var(--btech-red);
   float: left;
 }
 .setting-tab {
