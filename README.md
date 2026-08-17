@@ -5,7 +5,7 @@
 <h1 align="center">Bindo</h1>
 
 <h3 align="center">
-  Bridgerland Technical College's ebook reader, forked from Koodo Reader
+  BTECH IT Department's ebook reader, forked from Koodo Reader
 </h3>
 
 <div align="center">
