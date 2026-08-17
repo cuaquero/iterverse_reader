@@ -1,7 +1,7 @@
 export interface OAuthIdentity {
   email: string;
   name: string | null;
-  provider: "google" | "microsoft";
+  provider: "google" | "microsoft" | "lti";
   sub: string;
 }
 
@@ -10,23 +10,46 @@ export interface UpsertedUser {
   role: "student" | "admin";
 }
 
-// Upsert-by-(provider, sub), matching a returning user by their stable provider
-// subject id rather than email alone (emails can theoretically be reassigned;
-// the subject id can't).
+// Upsert-by-(provider, sub) first, matching a returning user by their stable
+// provider subject id rather than email alone where possible (emails can
+// theoretically be reassigned; the subject id can't).
+//
+// With LTI in the mix, though, the same person now legitimately signs in
+// through more than one provider (Canvas today, Microsoft 365 once BTECH
+// provisions student accounts), and email is the only claim both providers
+// share -- so a second provider match falls back to linking the existing
+// account by email rather than colliding with the UNIQUE(email) constraint.
+// This trades a little of the reassigned-email safety above for one account
+// per person across login methods, which is the tradeoff BTECH asked for.
 export async function upsertUser(db: D1Database, identity: OAuthIdentity): Promise<UpsertedUser> {
-  const existing = await db
+  const byProvider = await db
     .prepare("SELECT id, role FROM users WHERE oauth_provider = ? AND oauth_sub = ?")
     .bind(identity.provider, identity.sub)
     .first<{ id: string; role: "student" | "admin" }>();
 
-  if (existing) {
+  if (byProvider) {
     await db
       .prepare(
         "UPDATE users SET email = ?, name = ?, last_login_at = datetime('now') WHERE id = ?"
       )
-      .bind(identity.email, identity.name, existing.id)
+      .bind(identity.email, identity.name, byProvider.id)
       .run();
-    return existing;
+    return byProvider;
+  }
+
+  const byEmail = await db
+    .prepare("SELECT id, role FROM users WHERE email = ?")
+    .bind(identity.email)
+    .first<{ id: string; role: "student" | "admin" }>();
+
+  if (byEmail) {
+    await db
+      .prepare(
+        "UPDATE users SET oauth_provider = ?, oauth_sub = ?, name = ?, last_login_at = datetime('now') WHERE id = ?"
+      )
+      .bind(identity.provider, identity.sub, identity.name, byEmail.id)
+      .run();
+    return byEmail;
   }
 
   const id = crypto.randomUUID();

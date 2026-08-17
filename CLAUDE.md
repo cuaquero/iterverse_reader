@@ -120,5 +120,5 @@ Deployment, migration, and local-dev commands for the Cloudflare backend (Functi
 │       ├── reader/         # Reader logic (highlightUtil, noteUtil, styleUtil, ttsUtil, themeUtil, etc.)
 │       ├── request/        # HTTP requests
 │       └── storage/        # Storage services (databaseService, syncService)
-└── scripts/                # i18n tooling scripts (extract-untranslated, merge-translations)
+└── scripts/                # i18n tooling (extract-untranslated, merge-translations) + LTI setup (generate-lti-keypair)
 ```

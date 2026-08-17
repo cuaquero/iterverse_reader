@@ -219,6 +219,8 @@ npx wrangler pages deploy ./build --project-name=btech-books --branch=dev
   anywhere in the app yet and isn't reachable without a session cookie — same
   OAuth blocker as everything else client-side. Untested end-to-end against a
   real session; only verified with fixture data so far.
-- LTI 1.3 / Canvas integration — not started, pending Canvas Admin involvement.
-  See the original architecture-plan artifact from early in this project for
-  the sketch (OIDC launch flow, session-TTL-based deprovisioning approach).
+- LTI 1.3 / Canvas integration — backend routes and D1 schema are scaffolded
+  (`functions/api/lti/*`, `functions/lib/lti.ts`), but registration with a
+  real Canvas instance hasn't happened yet and the session-delivery approach
+  is untested against an actual embedded launch. See [LTI.md](./LTI.md) for
+  the full design and what's left.
