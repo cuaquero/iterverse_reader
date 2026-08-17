@@ -34,7 +34,7 @@ const emptyCover = (props) => (
       {props.format || "BOOK"}
     </div>
     <div className="cover-title">{props.title}</div>
-    <div className="cover-footer">BTECH Reader</div>
+    <div className="cover-footer">Bindo</div>
   </div>
 );
 

@@ -14,7 +14,7 @@ const PAGE = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>BTECH Reader</title>
+<title>Bindo</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -70,7 +70,7 @@ const PAGE = `<!doctype html>
       <path d="M132.6,29.9l-14.5,8.4c1.6,3.1,2.6,6.6,2.6,10.4,0,12.3-10,22.3-22.3,22.3s-14.9-4.2-18.9-10.4l-14.4,8.3c.9,1.4,2.1,2.5,3.3,3.2l24.6,14.2c3,1.7,7.8,1.7,10.8,0l24.6-14.2c3-1.7,5.4-5.9,5.4-9.4v-28.4c0-1.4-.4-3-1.2-4.5Z" />
       <path d="M76.1,48.7V16.6l-2.2,5.2-5.5,3.2c-3,1.7-5.4,5.9-5.4,9.4v28.4c0,1.4.4,3,1.2,4.5l14.4-8.3c-1.6-3.1-2.5-6.5-2.5-10.2Z" />
     </svg>
-    <h1>BTECH Reader is under construction</h1>
+    <h1>Bindo is under construction</h1>
     <p>We're building the next version of the college's ebook reader. Check back soon.</p>
     <span class="tag">Bridgerland Technical College</span>
   </div>

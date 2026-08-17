@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="src/assets/images/btech/logo-mark.png" width="96px" height="96px" alt="BTECH Reader logo" />
+  <img src="src/assets/images/btech/logo-mark.png" width="96px" height="96px" alt="Bindo logo" />
 </div>
 
-<h1 align="center">BTECH Reader</h1>
+<h1 align="center">Bindo</h1>
 
 <h3 align="center">
   Bridgerland Technical College's ebook reader, forked from Koodo Reader

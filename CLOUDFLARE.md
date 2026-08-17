@@ -1,4 +1,4 @@
-# BTECH Reader — Cloudflare Backend
+# Bindo — Cloudflare Backend
 
 This document covers the Cloudflare Pages + Functions backend added on top of the
 Koodo Reader web build for BTECH's deployment. It's aimed at whoever ends up

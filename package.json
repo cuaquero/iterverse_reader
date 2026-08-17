@@ -1,7 +1,7 @@
 {
-  "name": "btech-reader",
+  "name": "bindo",
   "version": "2.4.4",
-  "description": "BTECH Reader is a web-based ebook reader for Bridgerland Technical College, forked from Koodo Reader",
+  "description": "Bindo is a web-based ebook reader for Bridgerland Technical College, forked from Koodo Reader",
   "author": {
     "name": "Bridgerland Technical College"
   },
