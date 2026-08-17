@@ -669,7 +669,7 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
             <p className="setting-option-subtitle">
               <Trans>
                 {
-                  "Each time you open Koodo Reader, it automatically creates a snapshot of your library (excluding books and covers). You can use these snapshots to restore your library to a previous state. Please note that restoring from a snapshot will overwrite your current data"
+                  "Each time you open BTECH Reader, it automatically creates a snapshot of your library (excluding books and covers). You can use these snapshots to restore your library to a previous state. Please note that restoring from a snapshot will overwrite your current data"
                 }
               </Trans>
             </p>

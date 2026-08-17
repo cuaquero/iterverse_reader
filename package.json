@@ -1,17 +1,16 @@
 {
-  "name": "koodo-reader",
+  "name": "btech-reader",
   "version": "2.4.4",
-  "description": "Koodo Reader is a cross-platform ebook reader",
+  "description": "BTECH Reader is a web-based ebook reader for Bridgerland Technical College, forked from Koodo Reader",
   "author": {
-    "name": "App by Troye",
-    "email": "feedback@koodoreader.com"
+    "name": "Bridgerland Technical College"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=6.0.0"
   },
-  "repository": "https://github.com/koodo-reader/koodo-reader",
-  "private": false,
+  "repository": "https://github.com/mfoster-stem/koodo-bridge",
+  "private": true,
   "resolutions": {
     "@types/react": "^18.3.1",
     "node-gyp": "^10.0.0"

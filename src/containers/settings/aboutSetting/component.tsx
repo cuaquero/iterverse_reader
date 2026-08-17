@@ -1,12 +1,10 @@
 import React from "react";
 import { SettingInfoProps, SettingInfoState } from "./interface";
 import { Trans } from "react-i18next";
-import toast from "react-hot-toast";
 import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import packageJson from "../../../../package.json";
 
 import { getWebsiteUrl, openExternalUrl } from "../../../utils/common";
-import copyTextToClipboard from "copy-text-to-clipboard";
 import { isElectron } from "react-device-detect";
 declare var window: any;
 
@@ -107,57 +105,6 @@ class AboutSetting extends React.Component<SettingInfoProps, SettingInfoState> {
               } else {
                 openExternalUrl(getWebsiteUrl() + "/en/use-shortcut");
               }
-            }}
-          >
-            <Trans>Visit</Trans>
-          </span>
-        </div>
-        <div className="setting-dialog-new-title">
-          <Trans>Our website</Trans>
-
-          <span
-            className="change-location-button"
-            onClick={() => {
-              openExternalUrl(getWebsiteUrl());
-            }}
-          >
-            <Trans>Visit</Trans>
-          </span>
-        </div>
-        <div className="setting-dialog-new-title">
-          <Trans>Send email</Trans>
-
-          <span
-            className="change-location-button"
-            onClick={() => {
-              copyTextToClipboard("feedback@koodoreader.com");
-              toast.success(this.props.t("Email copied to clipboard"));
-            }}
-          >
-            <Trans>Copy</Trans>
-          </span>
-        </div>
-        <div className="setting-dialog-new-title">
-          <Trans>Translation</Trans>
-
-          <span
-            className="change-location-button"
-            onClick={() => {
-              openExternalUrl(
-                "https://github.com/koodo-reader/koodo-reader#translation"
-              );
-            }}
-          >
-            <Trans>Visit</Trans>
-          </span>
-        </div>
-        <div className="setting-dialog-new-title">
-          <Trans>GitHub repository</Trans>
-
-          <span
-            className="change-location-button"
-            onClick={() => {
-              openExternalUrl("https://github.com/koodo-reader/koodo-reader");
             }}
           >
             <Trans>Visit</Trans>

@@ -95,7 +95,7 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     ) {
       toast(
         this.props.t(
-          "Koodo Reader's web version are limited by the browser, for more powerful features, please download the desktop version."
+          "This data source isn't supported in the browser version."
         )
       );
       return;
@@ -267,7 +267,7 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     ) {
       toast(
         this.props.t(
-          "Koodo Reader's web version are limited by the browser, for more powerful features, please download the desktop version."
+          "This data source isn't supported in the browser version."
         )
       );
       return;
@@ -1097,7 +1097,7 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
                   toast.success(this.props.t("Change successful"));
                   toast(
                     this.props.t(
-                      "The new sync interval will take effect after restarting Koodo Reader"
+                      "The new sync interval will take effect after restarting the app"
                     )
                   );
                 }}
@@ -1180,7 +1180,7 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
             <p className="setting-option-subtitle">
               <Trans>
                 {
-                  "Data in other devices is messed up, but the data in this device is normal. You can reset the sync record in this device, delete the KoodoReader/config folder in the data source(Turn off Koodo Sync if necessary), and sync again. This should resolve the issue"
+                  "Data in other devices is messed up, but the data in this device is normal. You can reset the sync record in this device, delete the config folder in the data source, and sync again. This should resolve the issue"
                 }
               </Trans>
             </p>
