@@ -9,6 +9,7 @@
     "node": ">=20.0.0",
     "npm": ">=6.0.0"
   },
+  "packageManager": "yarn@1.22.22",
   "repository": "https://github.com/mfoster-stem/koodo-bridge",
   "private": true,
   "resolutions": {
