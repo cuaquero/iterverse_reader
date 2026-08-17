@@ -18,6 +18,12 @@ dist/
 /.claude
 /.superpowers
 
+# Cloudflare (wrangler local state, generated types, local-only secrets)
+/.wrangler
+/worker-configuration.d.ts
+.dev.vars
+.dev.vars.*
+
 # misc
 .DS_Store
 .env.local

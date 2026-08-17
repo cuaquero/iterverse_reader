@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "btech-books",
+  "pages_build_output_dir": "./build",
+  "compatibility_date": "2026-08-17",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    "ALLOWED_EMAIL_DOMAIN": "btech.edu"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "btech-books",
+      "database_id": "f4b2281b-2359-40c4-9af2-4efdd6eb3c92"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BOOK_FILES",
+      "bucket_name": "btech-books-files"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "a336b3af69344eed8aaee5ad3d54574c"
+    }
+  ]
+}
