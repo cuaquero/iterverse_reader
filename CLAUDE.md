@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-Koodo Reader 是一个跨平台电子书阅读器（Electron + React CRA + Redux）。
+本仓库（koodo-bridge）是 Koodo Reader 的 BTECH（Bridgerland Technical College）定制分支：一个纯 Web 电子书阅读器（React CRA + Redux），面向 Cloudflare 部署并计划嵌入 Canvas LMS（通过 LTI）。
 
-### 四层架构
+**重要变更**：上游 Koodo Reader 是跨平台 Electron 应用，但本分支已完全移除 Electron 打包 —— 没有 `main.js`、没有原生 SQLite（better-sqlite3）、没有桌面安装包/IPC 通道。所有数据库操作现在都走浏览器端存储（IndexedDB via `localforage`，或 File System Access API 用于本地文件夹同步），详见 `src/utils/storage/databaseService.ts` 的非 Electron 分支。代码中仍大量存在 `isElectron`（来自 `react-device-detect`）判断分支和 `window.require("electron")` 调用 —— 这些在本分支中永远不会执行（`isElectron` 恒为 `false`），是有意保留的死代码，而非 bug；除非有新的理由重新引入 Electron，否则不需要清理它们。
+
+### 三层架构
 
 | 层 | 位置 | 职责 |
 |---|------|------|
-| Electron 主进程 | `main.js` | IPC handlers, SQLite (better-sqlite3), 云同步, 原生集成 |
-| React 渲染进程 | `src/` | UI, Redux 状态管理, 书籍渲染 |
+| React 应用 | `src/` | UI, Redux 状态管理, 书籍渲染, 浏览器端存储 |
 | 阅读引擎 | `src/assets/lib/kookit-extra.min.mjs` | 闭源 ESM — 书籍解析、SQL 语句、同步工具 |
 | Go HTTP 服务 | `httpserver/` | 可选的 KOReader / OPDS 集成 |
 
@@ -25,13 +26,6 @@ Koodo Reader 是一个跨平台电子书阅读器（Electron + React CRA + Redux
 这些是混淆/压缩后的产物，无法阅读。如需查阅源码，请直接读取本地源码仓库：
 - `D:\Project\kookit`
 - `D:\Project\kookit-extra`
-
-## 关键 IPC 通道
-
-- `open-book` / `new-tab` / `exit-tab` — 窗口生命周期
-- `database-command` — 数据库操作（所有数据库操作必须通过此通道）
-- `cloud-upload` / `cloud-download` — 云同步
-- `before-reader-close` → `reader-close-ready` — 阅读器两阶段关闭
 
 ### Redux 切片
 
@@ -63,23 +57,14 @@ EPUB, PDF, MOBI, AZW3, AZW, TXT, FB2, CBR/CBZ/CBT/CB7, MD, DOCX, HTML/XML/XHTML/
 # 安装依赖（初次）
 yarn
 
-# 桌面开发模式（Electron + React 热重载）
-yarn dev
-
-# Web 开发模式（仅浏览器）
+# 开发模式（浏览器热重载）
 yarn start
 
-# 构建生产版本
+# 构建生产版本（静态文件，用于 Cloudflare Pages 等部署）
 yarn build
 
 # 运行测试
 yarn test
-
-# 打包分发
-yarn release
-
-# 重新编译原生模块
-yarn rebuild
 ```
 
 ## 开发规范
@@ -87,18 +72,15 @@ yarn rebuild
 - 用户可见文本必须使用 `react-i18next` 的 `t("key")`，不得硬编码
 - TypeScript 避免 `any`，在 `interface.tsx` 中定义类型
 - 状态类型用 `stateType`（`src/store/index.tsx`）
-- 不要从渲染进程直接操作 SQLite，所有数据库操作通过 `database-command` IPC
+- 数据库操作通过 `src/utils/storage/databaseService.ts`（浏览器端 IndexedDB/localforage），不要引入新的 Electron/IPC 依赖
 - 新增 i18n key 需在 `src/assets/locales/en.json` 中添加
 - Reader 工具函数（`src/utils/reader/`）会影响 iframe 中书籍渲染，修改后需手动回归测试
-- 添加窗口打开通道时需遵循 `new-tab` → `WebContentsView` / `open-book` → `BrowserWindow` 模式
-- 所有 IPC 参数需校验后再执行文件系统/数据库/Shell 操作
 - 不要将令牌、密码或完整书籍路径记录到 info 级别日志
 
 ## 项目结构
 
 ```
 .
-├── main.js                 # Electron 主进程
 ├── httpserver/             # Go HTTP 服务 (KOReader/OPDS)
 ├── public/                 # 静态资源 + WASM 库 (7z, unrar, pdfjs)
 ├── src/
@@ -124,6 +106,5 @@ yarn rebuild
 │       ├── reader/         # 阅读器逻辑 (highlightUtil, noteUtil, styleUtil, ttsUtil, themeUtil, etc.)
 │       ├── request/        # HTTP 请求
 │       └── storage/        # 存储服务 (databaseService, syncService)
-├── scripts/                # 构建脚本
-└── assets/                 # 构建资源 (图标、安装配置)
+└── scripts/                # i18n 工具脚本 (extract-untranslated, merge-translations)
 ```
