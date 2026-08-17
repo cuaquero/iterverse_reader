@@ -14,25 +14,8 @@ import { resetThirdpartyRequest } from "./thirdparty";
 import { isElectron } from "react-device-detect";
 const PUBLIC_URL = "https://api.koodoreader.com";
 const CN_PUBLIC_URL = "https://api.koodoreader.cn";
-let cachedPluginList: any[] | null = null;
 export const getPublicUrl = () => {
   return getServerRegion() === "china" ? CN_PUBLIC_URL : PUBLIC_URL;
-};
-export const checkDeveloperUpdate = async () => {
-  let res = await axios.get(
-    getPublicUrl() + `/api/update_dev?name=${navigator.language}`
-  );
-  return res.data.log;
-};
-export const getPluginList = async () => {
-  if (cachedPluginList) {
-    return cachedPluginList;
-  }
-  let res = await axios.get(
-    getPublicUrl() + `/api/get_plugins?name=${navigator.language}`
-  );
-  cachedPluginList = res.data.plugins;
-  return res.data.plugins;
 };
 export const uploadFile = async (url: string, file: any) => {
   return new Promise<boolean>((resolve) => {
@@ -46,12 +29,6 @@ export const uploadFile = async (url: string, file: any) => {
         resolve(false);
       });
   });
-};
-export const checkStableUpdate = async () => {
-  let res = await axios.get(
-    getPublicUrl() + `/api/update?name=${navigator.language}`
-  );
-  return res.data.log;
 };
 export const handleExitApp = async () => {
   toast.error(i18n.t("Authorization failed, please login again"));

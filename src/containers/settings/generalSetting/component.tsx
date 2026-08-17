@@ -48,8 +48,6 @@ class GeneralSetting extends React.Component<
         ConfigService.getReaderConfig("isUseOriginalName") === "yes",
       isExportOriginalName:
         ConfigService.getReaderConfig("isExportOriginalName") === "yes",
-      isDisableUpdate:
-        ConfigService.getReaderConfig("isDisableUpdate") === "yes",
       isPrecacheBook: ConfigService.getReaderConfig("isPrecacheBook") === "yes",
       isUseBuiltIn: ConfigService.getReaderConfig("isUseBuiltIn") === "yes",
       isDeleteOriginal:

@@ -75,11 +75,6 @@ export const generalSettingList = [
   },
   {
     isElectron: true,
-    title: "Disable update notification",
-    propName: "isDisableUpdate",
-  },
-  {
-    isElectron: true,
     title: "Delete original file when permanently deleting books",
     propName: "isDeleteOriginal",
   },
@@ -115,12 +110,6 @@ export const appearanceSettingList = [
 ];
 export const dataSettingList = [
   {
-    isElectron: true,
-    title: "Enable Discord Rich Presence",
-    desc: "Show your reading status and the book your're reading on your Discord profile. Discord needs to be running on your computer",
-    propName: "isEnableDiscordRPC",
-  },
-  {
     isElectron: false,
     title: "Auto sync reading progress with KOReader",
     desc: "Clicking the sync button will sync reading progress between Koodo Reader and KOReader with KOReader sync server.",
@@ -128,81 +117,6 @@ export const dataSettingList = [
   },
 ];
 export const noteSyncSettingList = [
-  {
-    isElectron: false,
-    title: "Auto sync notes and highlights to Notion",
-    desc: "",
-    propName: "isEnableNotionSync",
-    requiresAuth: true,
-    authFields: [
-      {
-        key: "token",
-        label: "Notion Integration Token",
-        placeholder: "Enter your Notion integration token",
-      },
-      {
-        key: "databaseId",
-        label: "Notion Database ID",
-        placeholder: "Enter the ID of the Notion database to sync to",
-      },
-    ],
-    authConfigKey: "notionSyncConfig",
-  },
-  {
-    isElectron: false,
-    title: "Auto sync notes and highlights to Yuque",
-    desc: "",
-    propName: "isEnableYuqueSync",
-    requiresAuth: true,
-    authFields: [
-      {
-        key: "token",
-        label: "Yuque Token",
-        placeholder: "Enter your Yuque personal access token",
-      },
-      {
-        key: "namespace",
-        label: "Yuque Namespace",
-        placeholder: "Enter namespace, e.g. username/repo-slug",
-      },
-    ],
-    authConfigKey: "yuqueSyncConfig",
-  },
-  {
-    isElectron: false,
-    title: "Auto sync notes and highlights to Readwise",
-    desc: "",
-    propName: "isEnableReadwiseSync",
-    requiresAuth: true,
-    authFields: [
-      {
-        key: "accessToken",
-        label: "Readwise Access Token",
-        placeholder: "Enter your Readwise access token",
-      },
-    ],
-    authConfigKey: "readwiseSyncConfig",
-  },
-  {
-    isElectron: false,
-    title: "Auto sync notes and highlights to SiYuan",
-    desc: "Please enable network serving in SiYuan - Settings - About, and make sure SiYuan is running when syncing",
-    propName: "isEnableSiYuanSync",
-    requiresAuth: true,
-    authFields: [
-      {
-        key: "serverUrl",
-        label: "SiYuan Server URL",
-        placeholder: "e.g. http://127.0.0.1:6806",
-      },
-      {
-        key: "token",
-        label: "SiYuan API Token",
-        placeholder: "Enter your SiYuan API token",
-      },
-    ],
-    authConfigKey: "siyuanSyncConfig",
-  },
   //// due to potential legal issues, we decide to remove the IMA sync for now, we will consider adding it back in the future when this issue is resolved
   // {
   //   isElectron: false,
@@ -241,31 +155,6 @@ export const noteSyncSettingList = [
   },
 ];
 export const wordSyncSettingList = [
-  {
-    isElectron: false,
-    title: "Auto sync new words to Eudic",
-    desc: "When you look up a word, it will be automatically synced to your Eudic study list",
-    propName: "isEnableEudicSync",
-    requiresAuth: true,
-    authFields: [
-      {
-        key: "accessToken",
-        label: "Eudic Access Token",
-        placeholder: "Enter your Eudic NIS access token",
-      },
-      {
-        key: "categoryName",
-        label: "Eudic Study List Name",
-        placeholder: "Enter the study list name",
-      },
-      {
-        key: "language",
-        label: "Eudic Language",
-        placeholder: "Language code, e.g. en / fr / de / es",
-      },
-    ],
-    authConfigKey: "eudicSyncConfig",
-  },
   {
     isElectron: false,
     title: "Auto sync new words to AnkiConnect",
@@ -309,12 +198,6 @@ export const syncSettingList = [
     title: "Auto download cloud books",
     desc: "To reduce storage usage, only the book metadata is downloaded by default, and the book files are not downloaded. After enabling this option, all book files will be downloaded during synchronization",
     propName: "autoOffline",
-  },
-  {
-    isElectron: false,
-    title: "Enable Koodo Sync",
-    desc: "Enable this option to increase synchronization speed. Your reading progress, notes, highlights, bookmarks, and other reading-related data will be encrypted, stored and synced via our cloud service, your books and covers will still be synced by your added data sources. Turning off this option will remove the above data from our cloud.",
-    propName: "isEnableKoodoSync",
   },
   {
     isElectron: false,

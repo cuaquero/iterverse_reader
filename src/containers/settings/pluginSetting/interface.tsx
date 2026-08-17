@@ -24,7 +24,4 @@ export interface SettingInfoProps extends RouteComponentProps<any> {
 }
 export interface SettingInfoState {
   isAddNew: boolean;
-  availablePlugins: any[];
-  expandedPluginKey: string | null;
-  activePluginTab: string;
 }

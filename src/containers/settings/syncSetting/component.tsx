@@ -18,7 +18,6 @@ import {
   handleContextMenu,
   openExternalUrl,
   openInBrowser,
-  resetKoodoSync,
   showTaskProgress,
   testConnection,
   testCORS,
@@ -40,7 +39,6 @@ import {
   onSyncCallback,
 } from "../../../utils/request/thirdparty";
 import SyncService from "../../../utils/storage/syncService";
-import { updateUserConfig } from "../../../utils/request/user";
 import BookUtil from "../../../utils/file/bookUtil";
 import Book from "../../../models/Book";
 import ConfigUtil from "../../../utils/file/configUtil";
@@ -53,8 +51,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
       autoOffline: ConfigService.getReaderConfig("autoOffline") === "yes",
       isDisableAutoSync:
         ConfigService.getReaderConfig("isDisableAutoSync") === "yes",
-      isEnableKoodoSync:
-        ConfigService.getReaderConfig("isEnableKoodoSync") === "yes",
       hideSyncProgress:
         ConfigService.getReaderConfig("hideSyncProgress") === "yes",
       driveConfig: {},
@@ -177,9 +173,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
       toast.success(i18n.t("Binding successful"), { id: "adding-sync-id" });
       if (this.props.isAuthed && !ConfigService.getItem("defaultSyncOption")) {
         ConfigService.setItem("defaultSyncOption", settingDrive);
-        if (ConfigService.getReaderConfig("isEnableKoodoSync") === "yes") {
-          resetKoodoSync();
-        }
         this.props.handleFetchDefaultSyncOption();
       }
       this.props.handleFetchDataSourceList();
@@ -231,9 +224,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     if (targetDrive === ConfigService.getItem("defaultSyncOption")) {
       ConfigService.removeItem("defaultSyncOption");
       this.props.handleFetchDefaultSyncOption();
-      if (ConfigService.getReaderConfig("isEnableKoodoSync") === "yes") {
-        resetKoodoSync();
-      }
     }
     toast.success(this.props.t("Deletion successful"));
   };
@@ -249,24 +239,8 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     }
 
     ConfigService.setItem("defaultSyncOption", newValue);
-    if (ConfigService.getReaderConfig("isEnableKoodoSync") === "yes") {
-      resetKoodoSync();
-    }
     this.props.handleFetchDefaultSyncOption();
     toast.success(this.props.t("Change successful"));
-    if (
-      !(await ConfigUtil.isCloudEmpty()) &&
-      ConfigService.getReaderConfig("isEnableKoodoSync") === "yes"
-    ) {
-      toast(
-        this.props.t(
-          "This data source already contains a library. If you need to merge local and cloud data, please turn off Koodo Sync and resync."
-        ),
-        {
-          duration: 10000,
-        }
-      );
-    }
   };
   handleSelectBackupOrRestoreSource = async (
     event: any,
@@ -473,9 +447,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
     }
     if (this.props.isAuthed && !ConfigService.getItem("defaultSyncOption")) {
       ConfigService.setItem("defaultSyncOption", this.props.settingDrive);
-      if (ConfigService.getReaderConfig("isEnableKoodoSync") === "yes") {
-        resetKoodoSync();
-      }
       this.props.handleFetchDefaultSyncOption();
     }
     this.props.handleFetchDataSourceList();
@@ -498,26 +469,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
               className="single-control-switch"
               onClick={async () => {
                 switch (item.propName) {
-                  case "isEnableKoodoSync":
-                    this.handleSetting(item.propName);
-                    let encryptToken = await TokenService.getToken(
-                      this.props.defaultSyncOption + "_token"
-                    );
-                    await updateUserConfig({
-                      is_enable_koodo_sync:
-                        ConfigService.getReaderConfig("isEnableKoodoSync"),
-                      default_sync_option: this.props.defaultSyncOption,
-                      default_sync_token: encryptToken || "",
-                    });
-                    let userInfo = await this.props.handleFetchUserInfo();
-                    if (
-                      ConfigService.getReaderConfig("isEnableKoodoSync") ===
-                      "yes"
-                    ) {
-                      this.props.cloudSyncFunc(userInfo);
-                    }
-
-                    break;
                   case "autoOffline":
                     this.handleSetting(item.propName);
                     if (!this.state.autoOffline) {

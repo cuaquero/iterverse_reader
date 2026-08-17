@@ -40,7 +40,6 @@ let chatWindow;
 let dbConnection = {};
 let syncUtilCache = {};
 let pickerUtilCache = {};
-let downloadRequest = null;
 
 const RESIZE_THROTTLE_MS = 300;
 
@@ -604,59 +603,6 @@ const promptBiometricAuth = async (
   };
 };
 
-// Discord Rich Presence setup
-let discordRPCClient = null;
-let discordRPCReady = false;
-let discordRPCConnecting = false;
-const DISCORD_CLIENT_ID = "1490863275074781305"; // Koodo Reader Discord App ID
-
-function initDiscordRPC() {
-  if (discordRPCConnecting || discordRPCReady) return Promise.resolve();
-  discordRPCConnecting = true;
-  return new Promise((resolve) => {
-    try {
-      const DiscordRPC = require("discord-rpc");
-      DiscordRPC.register(DISCORD_CLIENT_ID);
-      const client = new DiscordRPC.Client({ transport: "ipc" });
-      client.on("ready", () => {
-        console.info("Discord RPC connected");
-        discordRPCClient = client;
-        discordRPCReady = true;
-        discordRPCConnecting = false;
-        resolve();
-      });
-      client.login({ clientId: DISCORD_CLIENT_ID }).catch((err) => {
-        console.warn("Discord RPC login failed:", err.message);
-        discordRPCClient = null;
-        discordRPCReady = false;
-        discordRPCConnecting = false;
-        resolve();
-      });
-    } catch (e) {
-      console.warn("Discord RPC init failed:", e.message);
-      discordRPCClient = null;
-      discordRPCReady = false;
-      discordRPCConnecting = false;
-      resolve();
-    }
-  });
-}
-function destroyDiscordRPC() {
-  if (discordRPCClient) {
-    try {
-      discordRPCClient.destroy();
-    } catch (_) {}
-    discordRPCClient = null;
-  }
-  discordRPCReady = false;
-  discordRPCConnecting = false;
-}
-function buildProgressBar(percentage) {
-  const total = 10;
-  const filled = Math.round((percentage / 100) * total);
-  const empty = total - filled;
-  return "▓".repeat(filled) + "░".repeat(empty);
-}
 const singleInstance = app.requestSingleInstanceLock();
 var filePath = null;
 var pendingDeepLink = null;
@@ -973,117 +919,6 @@ const createMainWin = () => {
       console.log(`[Renderer Console] Message: ${message}`);
     }
   );
-  //cancel-download-app
-  ipcMain.handle("cancel-download-app", (event, arg) => {
-    // Implement cancellation logic here
-    // Note: In this example, we are not keeping a reference to the request,
-    // so we cannot actually abort it. This is a placeholder for demonstration.
-    if (downloadRequest) {
-      downloadRequest.abort();
-      downloadRequest = null;
-    }
-    event.returnValue = "cancelled";
-  });
-  // Discord RPC handlers
-  ipcMain.handle("discord-rpc-update", async (event, config) => {
-    const { bookTitle, author, percentage } = config;
-    if (!discordRPCReady) {
-      await initDiscordRPC();
-    }
-    if (!discordRPCClient || !discordRPCReady) return;
-    try {
-      const progressBar = buildProgressBar(percentage);
-      await discordRPCClient.setActivity({
-        details: bookTitle,
-        state: `${progressBar} ${percentage}%  |  by ${author}`,
-        largeImageKey: "koodo_reader_logo",
-        largeImageText: "Koodo Reader",
-        startTimestamp: Date.now(),
-        instance: false,
-        buttons: [
-          {
-            label: "Get Koodo Reader",
-            url: "https://koodoreader.com",
-          },
-        ],
-      });
-    } catch (e) {
-      console.warn("Failed to set Discord activity:", e.message);
-    }
-  });
-  ipcMain.handle("discord-rpc-clear", async (event) => {
-    if (discordRPCClient) {
-      try {
-        await discordRPCClient.clearActivity();
-      } catch (e) {
-        console.warn("Failed to clear Discord activity:", e.message);
-      }
-    }
-  });
-  ipcMain.handle("update-win-app", (event, config) => {
-    let fileName = `koodo-reader-installer.exe`;
-    let supportedArchs = ["x64", "ia32", "arm64"];
-    //get system arch
-    let arch = os.arch();
-    if (!supportedArchs.includes(arch)) {
-      return;
-    }
-
-    let url = `https://dl.koodoreader.com/v${config.version}/Koodo-Reader-${config.version}-${arch}.exe`;
-    const https = require("https");
-    const { spawn } = require("child_process");
-    const file = fs.createWriteStream(path.join(app.getPath("temp"), fileName));
-    downloadRequest = https.get(url, (res) => {
-      const totalSize = parseInt(res.headers["content-length"], 10);
-      let downloadedSize = 0;
-      res.on("data", (chunk) => {
-        downloadedSize += chunk.length;
-        const progress = ((downloadedSize / totalSize) * 100).toFixed(2);
-        const downloadedMB = (downloadedSize / 1024 / 1024).toFixed(2);
-        const totalMB = (totalSize / 1024 / 1024).toFixed(2);
-        mainWin.webContents.send("download-app-progress", {
-          progress,
-          downloadedMB,
-          totalMB,
-        });
-      });
-
-      res.pipe(file);
-      file.on("finish", () => {
-        console.info("\n下载完成！");
-        file.close();
-
-        let updateExePath = path.join(app.getPath("temp"), fileName);
-        if (!fs.existsSync(updateExePath)) {
-          console.error("更新包不存在:", updateExePath);
-          return;
-        }
-        // 验证文件可执行性
-        try {
-          fs.accessSync(updateExePath, fs.constants.X_OK);
-          console.info("更新包可执行性验证通过");
-        } catch (err) {
-          console.error("更新包不可执行:", err.message);
-          return;
-        }
-        try {
-          // 先退出应用，再启动安装程序，避免文件锁定导致覆盖安装失败
-          app.once("will-quit", () => {
-            const child = spawn(updateExePath, [], {
-              stdio: "ignore",
-              detached: true,
-              shell: true,
-              windowsHide: false,
-            });
-            child.unref();
-          });
-          app.quit();
-        } catch (err) {
-          console.error(`spawn 执行异常: ${err.message}`);
-        }
-      });
-    });
-  });
   ipcMain.handle("open-book", (event, config) => {
     let { url, isMergeWord, isAutoFullscreen, isAutoMaximize, isPreventSleep } =
       config;
@@ -1180,13 +1015,6 @@ const createMainWin = () => {
       }
       if (mainWin && !mainWin.isDestroyed()) {
         mainWin.webContents.send("reading-finished", {});
-      }
-      if (discordRPCClient) {
-        try {
-          discordRPCClient.clearActivity();
-        } catch (e) {
-          console.warn("Failed to clear Discord activity:", e.message);
-        }
       }
     });
     // Renderer finished flushing reading-time data — proceed with actual close
@@ -1743,13 +1571,6 @@ const createMainWin = () => {
         if (mainWin && mainView) {
           mainWin.contentView.removeChildView(mainView);
         }
-        if (discordRPCClient) {
-          try {
-            discordRPCClient.clearActivity();
-          } catch (e) {
-            console.warn("Failed to clear Discord activity:", e.message);
-          }
-        }
         resolve(undefined);
       };
 
@@ -1896,13 +1717,6 @@ const createMainWin = () => {
         if (mainWin && !mainWin.isDestroyed()) {
           mainWin.webContents.send("reading-finished", {});
         }
-        if (discordRPCClient) {
-          try {
-            discordRPCClient.clearActivity();
-          } catch (e) {
-            console.warn("Failed to clear Discord activity:", e.message);
-          }
-        }
       });
       // Renderer finished flushing reading-time data — proceed with actual close
       ipcMain.once("reader-close-ready", () => {
@@ -2017,7 +1831,6 @@ app.on("ready", () => {
 });
 app.on("before-quit", () => {
   isQuitting = true;
-  destroyDiscordRPC();
 });
 app.on("window-all-closed", () => {
   app.quit();

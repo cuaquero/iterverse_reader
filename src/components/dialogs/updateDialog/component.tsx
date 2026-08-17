@@ -1,26 +1,12 @@
 import React from "react";
 import "./updateInfo.css";
 import { UpdateInfoProps, UpdateInfoState } from "./interface";
-import packageInfo from "../../../../package.json";
 import { Trans } from "react-i18next";
 import Lottie from "lottie-react";
 import animationNew from "../../../assets/lotties/new.json";
-import {
-  compareVersions,
-  getWebsiteUrl,
-  openExternalUrl,
-} from "../../../utils/common";
-import { isElectron } from "react-device-detect";
-import { sleep } from "../../../utils/common";
-import {
-  checkDeveloperUpdate,
-  checkStableUpdate,
-  handleClearToken,
-} from "../../../utils/request/common";
-import {
-  ConfigService,
-  TokenService,
-} from "../../../assets/lib/kookit-extra-browser.min";
+import { getWebsiteUrl, openExternalUrl } from "../../../utils/common";
+import { handleClearToken } from "../../../utils/request/common";
+import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import toast from "react-hot-toast";
 import { isWindows } from "react-device-detect";
 
@@ -36,43 +22,8 @@ class UpdateInfo extends React.Component<UpdateInfoProps, UpdateInfoState> {
     };
   }
   async componentDidMount() {
-    if (!this.props.currentBook.key) {
-      if (!isElectron) {
-        return;
-      }
-      let res;
-      if (ConfigService.getReaderConfig("updateChannel") === "stable") {
-        res = await checkStableUpdate();
-      } else {
-        res = await checkDeveloperUpdate();
-      }
-      const newVersion = res.version;
-      const stableVersion = res.stable_version || "1.0.0";
-      await sleep(500);
-      if (
-        res.stable === "no" &&
-        ConfigService.getReaderConfig("skipVersion") === newVersion
-      ) {
-        return;
-      }
-      if ((process as any).windowsStore) {
-        return;
-      }
-      if (stableVersion === packageInfo.version) {
-        return;
-      }
-      if (compareVersions(newVersion, packageInfo.version) > 0) {
-        if (
-          ConfigService.getReaderConfig("isDisableUpdate") !== "yes" ||
-          this.props.isAuthed
-        ) {
-          this.setState({ updateLog: res });
-          this.props.handleNewDialog(true);
-        } else {
-          this.props.handleNewWarning(true);
-        }
-      }
-    }
+    // Update checking against Koodo's own release servers is intentionally
+    // disabled for this deployment — this dialog never triggers.
   }
   renderList = (arr: any[]) => {
     return arr.map((item, index) => {

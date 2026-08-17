@@ -39,7 +39,6 @@ export interface SettingInfoState {
   isAutoLaunch: boolean;
   isMinimizeToTray: boolean;
   isOpenInMain: boolean;
-  isDisableUpdate: boolean;
   isExportOriginalName: boolean;
   isDisableAI: boolean;
   isUseOriginalName: boolean;

@@ -251,12 +251,6 @@ export function handleFetchUserInfo() {
         }
       }
     }
-    if (
-      userInfo &&
-      userInfo.valid_until < parseInt(new Date().getTime() / 1000 + "")
-    ) {
-      dispatch(handleShowSupport(true));
-    }
     if (userInfo && userInfo.valid_until && userInfo.token_valid_until) {
       if (
         userInfo.valid_until > 0 &&

@@ -1368,23 +1368,6 @@ export const clearAllData = async () => {
   }
   await localforage.clear();
 };
-export const resetKoodoSync = async () => {
-  let encryptToken = await TokenService.getToken(
-    ConfigService.getItem("defaultSyncOption") + "_token"
-  );
-  await updateUserConfig({
-    is_enable_koodo_sync: "no",
-    default_sync_option: ConfigService.getItem("defaultSyncOption"),
-    default_sync_token: encryptToken || "",
-  });
-  setTimeout(() => {
-    updateUserConfig({
-      is_enable_koodo_sync: "yes",
-      default_sync_option: ConfigService.getItem("defaultSyncOption"),
-      default_sync_token: encryptToken || "",
-    });
-  }, 1000);
-};
 export const handleAutoCloudSync = async () => {
   let syncRes = await getCloudSyncToken();
   if (

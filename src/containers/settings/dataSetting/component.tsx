@@ -45,26 +45,14 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
       snapshotList: [],
       exportNotesFormat: "",
       exportHighlightsFormat: "",
-      isEnableDiscordRPC:
-        ConfigService.getReaderConfig("isEnableDiscordRPC") === "yes",
       isEnableKoReaderSync:
         ConfigService.getReaderConfig("isEnableKoReaderSync") === "yes",
-      isEnableNotionSync:
-        ConfigService.getReaderConfig("isEnableNotionSync") === "yes",
-      isEnableYuqueSync:
-        ConfigService.getReaderConfig("isEnableYuqueSync") === "yes",
-      isEnableReadwiseSync:
-        ConfigService.getReaderConfig("isEnableReadwiseSync") === "yes",
       isEnableMarkdownSync:
         ConfigService.getReaderConfig("isEnableMarkdownSync") === "yes",
-      isEnableEudicSync:
-        ConfigService.getReaderConfig("isEnableEudicSync") === "yes",
       isEnableAnkiSync:
         ConfigService.getReaderConfig("isEnableAnkiSync") === "yes",
       isEnableImaSync:
         ConfigService.getReaderConfig("isEnableImaSync") === "yes",
-      isEnableSiYuanSync:
-        ConfigService.getReaderConfig("isEnableSiYuanSync") === "yes",
     };
   }
   async componentDidMount() {

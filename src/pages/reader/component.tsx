@@ -21,11 +21,6 @@ import SettingDialog from "../../components/dialogs/settingDialog";
 import SpeechDialog from "../../components/dialogs/speechDialog";
 import AnnotationDialog from "../../components/dialogs/annotationDialog";
 import PopupOptionDialog from "../../components/dialogs/popupOptionDialog";
-import {
-  updateDiscordPresence,
-  clearDiscordPresence,
-} from "../../utils/reader/discordRPC";
-import SupportDialog from "../../components/dialogs/supportDialog";
 import { READING_PANEL_TOGGLE_EVENT } from "../../utils/reader/mouseEvent";
 import { throttle } from "../../utils/common";
 declare var window: any;
@@ -206,9 +201,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
       // Initialise UI duration from persisted total
       const savedTotal = this.readingTimeUtil.getTotalSeconds(book.key);
       this.setState({ totalDuration: savedTotal, currentDuration: 0 });
-      if (isElectron) {
-        updateDiscordPresence(book);
-      }
     });
   }
 
@@ -217,9 +209,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
       READING_PANEL_TOGGLE_EVENT,
       this.handleReadingPanelToggle
     );
-    if (isElectron) {
-      clearDiscordPresence();
-    }
     clearInterval(this.tickTimer);
     if (this.autoShowTimer) {
       clearTimeout(this.autoShowTimer);
@@ -851,7 +840,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
         {this.props.currentBook.key && <Viewer {...(renditionProps as any)} />}
         {this.props.isConvertOpen && <ConvertDialog />}
         {this.props.isPdfCropOpen && <PdfCropDialog />}
-        <SupportDialog />
         {this.props.isOpenPopupOptionDialog && (
           <>
             <PopupOptionDialog />

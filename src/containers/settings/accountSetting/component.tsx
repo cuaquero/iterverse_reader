@@ -5,9 +5,7 @@ import { isElectron } from "react-device-detect";
 import _ from "underscore";
 import toast from "react-hot-toast";
 import {
-  formatTimestamp,
   getServerRegion,
-  getWebsiteUrl,
   handleAutoCloudSync,
   handleContextMenu,
   openInBrowser,
@@ -23,7 +21,6 @@ import {
 } from "../../../assets/lib/kookit-extra-browser.min";
 import { loginList } from "../../../constants/loginList";
 import {
-  getTempToken,
   getUserRequest,
   loginRegister,
   resetUserRequest,
@@ -44,8 +41,6 @@ class AccountSetting extends React.Component<
       isAddNew: false,
       settingLogin: "",
       loginConfig: {},
-      isRedeemCode: false,
-      redeemCode: "",
       isSendingCode: false,
       countdown: 0,
       serverRegion: getServerRegion(),
@@ -55,23 +50,6 @@ class AccountSetting extends React.Component<
     if (this.props.isAuthed) {
       this.props.handleFetchLoginOptionList();
       this.props.handleFetchUserInfo();
-    }
-  }
-  UNSAFE_componentWillReceiveProps(
-    nextProps: Readonly<SettingInfoProps>,
-    nextContext: any
-  ): void {
-    if (
-      nextProps.isShowSupport &&
-      nextProps.isShowSupport !== this.props.isShowSupport
-    ) {
-      toast(
-        this.props.t(
-          "Your Pro trial has expired, please renew it to continue using the Pro features"
-        )
-      );
-      this.props.handleSetting(false);
-      this.props.handleSettingMode("general");
     }
   }
   handleRest = (_bool: boolean) => {
@@ -511,120 +489,6 @@ class AccountSetting extends React.Component<
             </div>
           </div>
         )}
-        {this.state.isRedeemCode && (
-          <div
-            className="voice-add-new-container"
-            style={{
-              marginLeft: "25px",
-              width: "calc(100% - 50px)",
-              fontWeight: 500,
-            }}
-          >
-            <input
-              type={"text"}
-              name={"redeemCode"}
-              placeholder={this.props.t("Enter your redemption code")}
-              onChange={(e) => {
-                if (e.target.value) {
-                  this.setState({
-                    redeemCode: e.target.value.trim().toUpperCase(),
-                  });
-                }
-              }}
-              onContextMenu={() => {
-                handleContextMenu("token-dialog-redeem-code-box", true);
-              }}
-              id={"token-dialog-redeem-code-box"}
-              className="token-dialog-username-box"
-              style={{ height: "35px" }}
-            />
-            <div className="token-dialog-button-container">
-              <div
-                className="voice-add-confirm"
-                onClick={async () => {
-                  toast.loading(this.props.t("Verifying..."), {
-                    id: "redeem-code",
-                  });
-                  let userRequest = await getUserRequest();
-                  let response = await userRequest.redeemCode({
-                    code: this.state.redeemCode,
-                  });
-                  if (response.code === 200) {
-                    this.props.handleFetchUserInfo();
-                    toast.success(this.props.t("Redeem successful"), {
-                      id: "redeem-code",
-                    });
-
-                    this.setState({ isRedeemCode: false });
-                  } else if (response.code === 401) {
-                    toast.error(
-                      this.props.t("Redeem failed, error code") +
-                        ": " +
-                        response.msg,
-                      {
-                        id: "redeem-code",
-                      }
-                    );
-                    handleExitApp();
-                    return;
-                  } else if (response.code === 10010) {
-                    toast.error(
-                      this.props.t(
-                        "This code has already been used, if you have redeemed it before, there is no need to redeem it again. Just log in to same account to use Pro features"
-                      ),
-                      {
-                        id: "redeem-code",
-                        duration: 6000,
-                      }
-                    );
-                  } else {
-                    toast.error(
-                      this.props.t("Redeem failed, error code") +
-                        ": " +
-                        response.msg,
-                      {
-                        id: "redeem-code",
-                      }
-                    );
-                    if (response.code === 10009) {
-                      if (this.state.redeemCode.startsWith("CD")) {
-                        toast(
-                          this.props.t(
-                            "This is the order number not the redemption code, please check your email again, the redemption code is below the order number"
-                          ),
-                          {
-                            duration: 8000,
-                          }
-                        );
-                      } else {
-                        toast(
-                          this.props.t(
-                            "Please make sure you entered the correct redemption code and the code matches your server region, if you have any questions, please contact our support team"
-                          ),
-                          {
-                            duration: 8000,
-                          }
-                        );
-                      }
-                    }
-                  }
-                }}
-              >
-                <Trans>Redeem</Trans>
-              </div>
-              <div className="voice-add-button-container">
-                <div
-                  className="voice-add-cancel"
-                  onClick={() => {
-                    this.setState({ isRedeemCode: false });
-                  }}
-                >
-                  <Trans>Cancel</Trans>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         <div className="setting-dialog-new-title">
           <Trans>
             {this.props.isAuthed ? "Server region" : "Select server region"}
@@ -721,36 +585,6 @@ class AccountSetting extends React.Component<
                   </div>
                 );
               })}
-            </div>
-          </>
-        )}
-        {!this.props.isAuthed && (
-          <>
-            <div className="account-login-tips">
-              {this.props.t(
-                "7-day free trial upon registration, then billed annually"
-              )}
-            </div>
-            <div
-              className="account-login-tips"
-              style={{
-                marginTop: "10px",
-                opacity: 1,
-                fontWeight: "bold",
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-              onClick={() => {
-                openInBrowser(
-                  getWebsiteUrl() +
-                    (ConfigService.getReaderConfig("lang").startsWith("zh")
-                      ? "/zh"
-                      : "/en") +
-                    "/pricing"
-                );
-              }}
-            >
-              {this.props.t("Compare Free and Pro features")}
             </div>
           </>
         )}
@@ -917,130 +751,6 @@ class AccountSetting extends React.Component<
             )}
           </p>
         )}
-        {this.props.isAuthed && this.props.userInfo && (
-          <div className="setting-dialog-new-title">
-            <Trans>Account type</Trans>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span>
-                <Trans>
-                  {this.props.userInfo.type === "trial"
-                    ? "Trial user"
-                    : this.props.userInfo.type === "pro"
-                      ? "Pro user"
-                      : "Free user"}
-                </Trans>
-                {" ("}
-                <Trans
-                  i18nKey="Valid until"
-                  label={this.props.userInfo.valid_until}
-                >
-                  Valid until
-                  {{
-                    label: formatTimestamp(
-                      this.props.userInfo.valid_until * 1000
-                    ),
-                  }}
-                </Trans>
-                {")"}
-              </span>
-              <span
-                className="change-location-button"
-                style={{ marginLeft: "10px", cursor: "pointer" }}
-                onClick={async () => {
-                  toast.loading(this.props.t("Refreshing"), {
-                    id: "refresh-user-info",
-                  });
-                  await this.props.handleFetchUserInfo();
-                  toast.success(this.props.t("Refresh successful"), {
-                    id: "refresh-user-info",
-                  });
-                }}
-              >
-                <Trans>Refresh</Trans>
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0",
-            right: "0",
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            paddingRight: "10px",
-            width: "100%",
-            height: "40px",
-            zIndex: 100,
-          }}
-          className="setting-dialog-pro-button"
-        >
-          <div
-            onClick={async () => {
-              if (!this.props.isAuthed) {
-                openInBrowser(
-                  getWebsiteUrl() +
-                    (ConfigService.getReaderConfig("lang").startsWith("zh")
-                      ? "/zh"
-                      : "/en") +
-                    "/pricing"
-                );
-                return;
-              }
-              let response = await getTempToken();
-              if (response.code === 200) {
-                let tempToken = response.data.access_token;
-                let deviceUuid = await TokenService.getFingerprint();
-                openInBrowser(
-                  getWebsiteUrl() +
-                    (ConfigService.getReaderConfig("lang").startsWith("zh")
-                      ? "/zh"
-                      : "/en") +
-                    "/pricing?temp_token=" +
-                    tempToken +
-                    "&device_uuid=" +
-                    deviceUuid
-                );
-              } else if (response.code === 401) {
-                this.props.handleFetchAuthed();
-              }
-            }}
-            style={{
-              paddingLeft: "10px",
-              paddingRight: "10px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            <Trans>
-              {this.props.isAuthed && this.props.userInfo
-                ? this.props.userInfo.valid_until <
-                  parseInt(new Date().getTime() / 1000 + "")
-                  ? "Upgrade to Pro"
-                  : "Renew Pro"
-                : "Upgrade to Pro"}
-            </Trans>
-          </div>
-          <div
-            onClick={async () => {
-              if (!this.props.isAuthed) {
-                toast(this.props.t("Please log in first"));
-                return;
-              }
-              this.setState({ isRedeemCode: true });
-            }}
-            style={{
-              fontWeight: "bold",
-              paddingLeft: "10px",
-              paddingRight: "10px",
-              cursor: "pointer",
-            }}
-          >
-            <Trans>{"Redeem with code"}</Trans>
-          </div>
-        </div>
       </>
     );
   }
