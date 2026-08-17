@@ -184,14 +184,27 @@ Applied so far: `0001_init_schema` (users, kv_store), `0002_add_user_role`
 
 ## Deployment
 
+**Auto-deploy is wired up**: the Pages project is connected directly to
+`mfoster-stem/koodo-bridge` (Cloudflare's own Git integration, not a GitHub
+Action), production branch `dev`, automatic deployments enabled. Push to
+`dev` and Cloudflare builds and deploys it — no separate CI needed.
+
+This depends on one dashboard-only setting that **isn't stored in this repo
+and can't be checked into it**: Pages project → Settings → Build →
+**Build command = `yarn build`**. Without it, Cloudflare skips the build
+step entirely, can't find the `build/` output directory `wrangler.jsonc`
+points at, and every push-triggered deploy fails with "Output directory
+not found" — which is exactly what happened the first time this was wired
+up. If auto-deploy mysteriously stops working after a dashboard change,
+check that setting first.
+
+Manual deploy still works if you need to push something outside of a
+`dev` commit (e.g. testing a branch, or bypassing a broken auto-deploy):
+
 ```bash
 yarn build
 npx wrangler pages deploy ./build --project-name=btech-books --branch=dev
 ```
-
-There's no CI wired up for this yet — deploys are manual. Worth automating
-(a GitHub Action running this on push to `dev`) once the app is far enough
-along that manual deploys become a chore, but not before.
 
 ## What's NOT done yet
 
