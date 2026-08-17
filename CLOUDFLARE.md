@@ -137,8 +137,11 @@ Routes:
 
 ### User roles
 
-`users.role` is `'student'` (default) or `'admin'`. **There is no admin-
-management UI yet** — promoting someone to admin is a manual step:
+`users.role` is `'student'` (default) or `'admin'`. Promoting/demoting is
+done through the admin UI (`/admin`, Users tab), backed by
+`GET /api/admin/users` and `PATCH /api/admin/users/:id` (both admin-only;
+self-demotion is blocked to avoid locking out the only admin). The old
+manual route still works if the UI is ever unreachable:
 
 ```bash
 npx wrangler d1 execute btech-books --remote \
@@ -212,8 +215,10 @@ npx wrangler pages deploy ./build --project-name=btech-books --branch=dev
   `DatabaseService`'s web branch still uses `localforage` instead of
   `/api/db/:dbName`; nothing in the app actually requires login. All on hold
   pending the OAuth app registrations above.
-- No admin UI for uploading books or managing roles — both are curl/wrangler-cli
-  operations for now.
+- The `/admin` page (book upload/removal, role management) isn't linked from
+  anywhere in the app yet and isn't reachable without a session cookie — same
+  OAuth blocker as everything else client-side. Untested end-to-end against a
+  real session; only verified with fixture data so far.
 - LTI 1.3 / Canvas integration — not started, pending Canvas Admin involvement.
   See the original architecture-plan artifact from early in this project for
   the sketch (OIDC launch flow, session-TTL-based deprovisioning approach).
