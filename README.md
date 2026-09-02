@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="src/assets/images/btech/logo-mark.png" width="96px" height="96px" alt="Bindo logo" />
+  <img src="src/assets/images/iterverse/mark.svg" width="96px" height="96px" alt="Iterverse Reader logo" />
 </div>
 
-<h1 align="center">Bindo</h1>
+<h1 align="center">Iterverse Reader</h1>
 
 <h3 align="center">
   BTECH IT Department's ebook reader, forked from Koodo Reader
@@ -16,14 +16,14 @@
 
 ## What this is
 
-This is BTECH's internal fork of [Koodo Reader](https://github.com/koodo-reader/koodo-reader), an open-source ebook reader, customized for deployment as a web app at `books.itstem.org` and (eventually) embedded in Canvas via LTI.
+This is BTECH's internal fork of [Koodo Reader](https://github.com/koodo-reader/koodo-reader), an open-source ebook reader, customized for deployment as a web app at `books.itstem.org` and (eventually) embedded in Canvas via LTI. It's part of **Iterverse**, BTECH IT's umbrella platform alongside the labs platform - see that repo's `design-system/` for the shared brand tokens and Iterverse mark used here.
 
 It is **not** the upstream open-source project — this fork has diverged in ways specific to BTECH's deployment:
 
 - **Web-only.** Electron desktop packaging has been removed entirely (no installers, no native SQLite, no desktop-only IPC). See `CLAUDE.md` for what that changed.
 - **Cloudflare backend.** Pages Functions + D1 + R2 + KV handle auth and data sync, replacing Koodo's own hosted backend. See `CLOUDFLARE.md`.
 - **Feature set trimmed** for an institutional deployment — no Pro paywall, no Koodo-hosted cloud sync, no plugin marketplace, no auto-update, cloud-drive sync reduced to local-folder only, a handful of third-party note-sync integrations removed. Anki and Markdown export were kept.
-- **Branded for BTECH**, not Koodo.
+- **Branded for Iterverse**, not Koodo - product name and marketing copy were BTECH's own once already (as "Bindo"), then renamed again to join the Iterverse umbrella; see the git history around the "Iterverse Reader" rename for what changed and why.
 
 ## Features
 

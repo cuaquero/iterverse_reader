@@ -14,7 +14,7 @@ const PAGE = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bindo</title>
+<title>Iterverse Reader</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -34,10 +34,9 @@ const PAGE = `<!doctype html>
     text-align: center;
   }
   .mark {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     margin: 0 auto 28px;
-    color: #d22030;
   }
   h1 {
     font-size: 1.5rem;
@@ -65,12 +64,11 @@ const PAGE = `<!doctype html>
 </head>
 <body>
   <div class="card">
-    <svg class="mark" viewBox="55 5 85 80" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" aria-label="BTECH mark">
-      <path d="M87.8,48.5h0s0,0,0,.1c0,5.8,4.7,10.6,10.6,10.6s10.6-4.7,10.6-10.6-4.7-10.6-10.6-10.6h-5.9v-11.7h5.9c7.9,0,14.8,4.1,18.7,10.3l14.5-8.4c-.9-1.4-2.1-2.5-3.3-3.2l-24.6-14.2c-3-1.7-7.8-1.7-10.8,0l-3.1,1.8-2-4.9v40.9Z" />
-      <path d="M132.6,29.9l-14.5,8.4c1.6,3.1,2.6,6.6,2.6,10.4,0,12.3-10,22.3-22.3,22.3s-14.9-4.2-18.9-10.4l-14.4,8.3c.9,1.4,2.1,2.5,3.3,3.2l24.6,14.2c3,1.7,7.8,1.7,10.8,0l24.6-14.2c3-1.7,5.4-5.9,5.4-9.4v-28.4c0-1.4-.4-3-1.2-4.5Z" />
-      <path d="M76.1,48.7V16.6l-2.2,5.2-5.5,3.2c-3,1.7-5.4,5.9-5.4,9.4v28.4c0,1.4.4,3,1.2,4.5l14.4-8.3c-1.6-3.1-2.5-6.5-2.5-10.2Z" />
+    <svg class="mark" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Iterverse mark">
+      <polygon points="30,18 62,18 78,46 62,74 30,74 14,46" fill="none" stroke="#d22030" stroke-width="11" stroke-linejoin="miter" />
+      <rect x="41.5" y="31" width="9" height="30" fill="#36393b" />
     </svg>
-    <h1>Bindo is under construction</h1>
+    <h1>Iterverse Reader is under construction</h1>
     <p>We're building the next version of the college's ebook reader. Check back soon.</p>
     <span class="tag">Bridgerland Technical College</span>
   </div>

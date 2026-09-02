@@ -1,7 +1,7 @@
 {
-  "name": "bindo",
+  "name": "iterverse-reader",
   "version": "2.4.4",
-  "description": "Bindo is a web-based ebook reader for Bridgerland Technical College, forked from Koodo Reader",
+  "description": "Iterverse Reader is a web-based ebook reader for Bridgerland Technical College, forked from Koodo Reader",
   "author": {
     "name": "Bridgerland Technical College"
   },

@@ -461,7 +461,7 @@ class PopupAssist extends React.Component<PopupAssistProps, PopupAssistState> {
       new Blob([JSON.stringify(exportData, null, 2)], {
         type: "application/json;charset=UTF-8",
       }),
-      `KoodoReader-${modeLabel}-Assistant-${bookName}-${dateStr}.json`
+      `IterverseReader-${modeLabel}-Assistant-${bookName}-${dateStr}.json`
     );
     toast.success(this.props.t("Export successful"));
   };

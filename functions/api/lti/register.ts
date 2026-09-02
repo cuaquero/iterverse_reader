@@ -53,7 +53,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     grant_types: ["implicit", "client_credentials"],
     initiate_login_uri: `${base}/api/lti/login`,
     redirect_uris: [`${base}/api/lti/launch`],
-    client_name: "Bindo",
+    client_name: "Iterverse Reader",
     jwks_uri: `${base}/api/lti/jwks`,
     token_endpoint_auth_method: "private_key_jwt",
     scope: "openid",

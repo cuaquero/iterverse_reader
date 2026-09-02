@@ -8,7 +8,6 @@ import { loginList } from "../../constants/loginList";
 import {
   generateSyncRecord,
   getServerRegion,
-  getWebsiteUrl,
   handleAutoCloudSync,
   handleContextMenu,
   openInBrowser,
@@ -37,7 +36,12 @@ class Login extends React.Component<LoginProps, LoginState> {
   constructor(props: LoginProps) {
     super(props);
     this.state = {
-      currentStep: 0,
+      // Starts at the actual sign-in step - steps 0/1 were upstream's
+      // mobile-app marketing carousel (Android/iOS promo, device-sync
+      // blurb), which don't apply to this web-only BTECH fork and were
+      // removed rather than reworded, since there's no real mobile app to
+      // advertise in their place.
+      currentStep: 2,
       loginConfig: {},
       countdown: 0,
       isSendingCode: false,
@@ -142,141 +146,6 @@ class Login extends React.Component<LoginProps, LoginState> {
         </div>
         {this.props.isSettingOpen && <SettingDialog />}
         {this.props.isShowLoading && <LoadingDialog />}
-        {this.state.currentStep === 0 && (
-          <div
-            className="login-container"
-            style={{
-              backgroundColor: "#f2ede5",
-            }}
-          >
-            <div
-              className="login-cover-container"
-              style={{
-                backgroundColor: "#e5e2dd",
-              }}
-            >
-              <div className="login-logo">
-                <img
-                  src={require("../../assets/images/btech/logo-horizontal.png")}
-                  alt="logo"
-                  className="login-logo-img"
-                />
-              </div>
-
-              <img
-                src={require("../../assets/images/background1.png")}
-                alt="cover"
-                className="login-cover-img"
-              />
-            </div>
-            <div className="login-content-container">
-              <img
-                src={require("../../assets/images/illustration1.png")}
-                alt="logo"
-                className="login-content-illustration"
-              />
-
-              <div className="login-title">
-                <Trans>
-                  {this.props.t(
-                    "Meticulously designed and built for Android and iOS"
-                  )}
-                </Trans>
-              </div>
-              <div className="login-subtitle">
-                {this.props.t(
-                  "After three years of design and development, the mobile version of Koodo Reader is finally out"
-                )}
-              </div>
-              <div
-                className="login-next-button"
-                onClick={() => {
-                  this.setState({
-                    currentStep: 1,
-                  });
-                }}
-              >
-                {this.props.t("Next step")}
-              </div>
-            </div>
-          </div>
-        )}
-        {this.state.currentStep === 1 && (
-          <div
-            className="login-container"
-            style={{
-              backgroundColor: "#dfdedd",
-            }}
-          >
-            <div
-              className="login-cover-container"
-              style={{
-                backgroundColor: "#eae9e5",
-              }}
-            >
-              <div className="login-logo">
-                <img
-                  src={require("../../assets/images/btech/logo-horizontal.png")}
-                  alt="logo"
-                  className="login-logo-img"
-                />
-              </div>
-
-              <img
-                src={require("../../assets/images/background2.png")}
-                alt="cover"
-                className="login-cover-img"
-              />
-            </div>
-            <div className="login-content-container">
-              <img
-                src={require("../../assets/images/illustration2.png")}
-                alt="logo"
-                className="login-content-illustration"
-                style={{
-                  width: "45%",
-                }}
-              />
-
-              <div className="login-title" style={{ marginTop: "20%" }}>
-                {this.props.t(
-                  "Synchronize books and reading progress across all your devices"
-                )}
-              </div>
-              <div className="login-subtitle">
-                {this.props.t(
-                  "With the integration of popular cloud storage services, WebDAV, FTP, SFTP, SMB, Docker, and object storage, all your data remains securely in your control"
-                )}
-              </div>
-              <div>
-                <div
-                  className="login-next-button"
-                  onClick={() => {
-                    this.setState({
-                      currentStep: 0,
-                    });
-                  }}
-                  style={{
-                    borderWidth: "0px",
-                    right: "140px",
-                  }}
-                >
-                  {this.props.t("Last step")}
-                </div>
-                <div
-                  className="login-next-button"
-                  onClick={() => {
-                    this.setState({
-                      currentStep: 2,
-                    });
-                  }}
-                >
-                  {this.props.t("Next step")}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         {this.state.currentStep === 2 && (
           <div
             className="login-container"
@@ -309,9 +178,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                 className="login-title"
                 style={{ marginTop: "50px", marginBottom: "30px" }}
               >
-                {this.props.t(
-                  "Embark on your journey of exploration with Koodo Reader Pro"
-                )}
+                {this.props.t("Sign in to Iterverse Reader")}
               </div>
               <div className="login-option-box">
                 <div>
@@ -389,33 +256,6 @@ class Login extends React.Component<LoginProps, LoginState> {
                       </div>
                     );
                   })}
-                  <div className="login-billing-info">
-                    {this.props.t(
-                      "7-day free trial upon registration, then billed annually"
-                    )}
-                  </div>
-                  <div
-                    className="login-billing-info"
-                    style={{
-                      marginTop: "-25px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                    }}
-                    onClick={() => {
-                      openInBrowser(
-                        getWebsiteUrl() +
-                          (ConfigService.getReaderConfig("lang").startsWith(
-                            "zh"
-                          )
-                            ? "/zh"
-                            : "/en") +
-                          "/pricing"
-                      );
-                    }}
-                  >
-                    {this.props.t("Compare Free and Pro features")}
-                  </div>
                   <div
                     className="login-manual-token"
                     onClick={() => {
@@ -424,11 +264,6 @@ class Login extends React.Component<LoginProps, LoginState> {
                     }}
                   >
                     {this.props.t("Manually enter login credentials")}
-                  </div>
-                  <div className="login-term">
-                    {this.props.t(
-                      "By clicking continue, you acknowledge that you have carefully read and agree to accept Koodo Reader's Terms of Service and Privacy Policy"
-                    )}
                   </div>
                 </div>
               </div>
@@ -600,24 +435,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                 className="login-title"
                 style={{ marginTop: "50px", marginBottom: "20px" }}
               >
-                {this.props.t(
-                  "Download the mobile version to read and take notes anytime, anywhere"
-                )}
-              </div>
-              <div className="login-mobile-container">
-                <img
-                  src={
-                    ConfigService.getReaderConfig("lang") &&
-                    ConfigService.getReaderConfig("lang").startsWith("zh")
-                      ? require("../../assets/images/mobile-qr-zh.png")
-                      : require("../../assets/images/mobile-qr.png")
-                  }
-                  alt="logo"
-                  className="login-mobile-qr"
-                  style={{
-                    width: "40%",
-                  }}
-                />
+                {this.props.t("You're all set")}
               </div>
               <div
                 className="login-next-button"
@@ -666,9 +484,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                 className="login-title"
                 style={{ marginTop: "80px", marginBottom: "50px" }}
               >
-                {this.props.t(
-                  "Embark on your journey of exploration with Koodo Reader Pro"
-                )}
+                {this.props.t("Sign in to Iterverse Reader")}
               </div>
               <div className="login-option-box">
                 <div>

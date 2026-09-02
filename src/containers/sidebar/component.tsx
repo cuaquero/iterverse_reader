@@ -1,6 +1,6 @@
 import React from "react";
 import "./sidebar.css";
-import BtechMark from "../../components/btechMark";
+import IterverseMark from "../../components/iterverseMark";
 import { sideMenu } from "../../constants/sideMenu";
 import { SidebarProps, SidebarState } from "./interface";
 import { withRouter } from "react-router-dom";
@@ -386,15 +386,15 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
             <span className="icon-menu sidebar-list"></span>
           </div>
 
-          <BtechMark
-            color={
+          <IterverseMark
+            barColor={
               ConfigService.getReaderConfig("appSkin") === "night" ||
               (ConfigService.getReaderConfig("appSkin") === "system" &&
                 ConfigService.getReaderConfig("isOSNight") === "yes")
                 ? "#ffffff"
-                : "#d22030"
+                : "#36393b"
             }
-            className="logo btech-mark"
+            className="logo iterverse-mark"
             onClick={() => {
               this.handleJump(getWebsiteUrl());
             }}
