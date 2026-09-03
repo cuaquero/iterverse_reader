@@ -589,6 +589,32 @@ class Header extends React.Component<HeaderProps, HeaderState> {
               <span className="icon-sort-desc header-sort-icon"></span>
             </span>
           </div>
+          {/* Only entry point into /admin (the book-catalog/user-role panel,
+              src/pages/admin) - that route already checks role itself and
+              shows "unauthorized" for anyone else, but there was no link to
+              it anywhere in the UI at all, so an admin had no way to find
+              it short of knowing the URL. Gated here too so students don't
+              see a button that would just reject them. */}
+          {this.props.role === "admin" && (
+            <div
+              className="setting-icon-container"
+              onClick={() => {
+                this.props.history.push("/admin");
+              }}
+              style={{ marginTop: "2px" }}
+            >
+              <span
+                data-tooltip-id="my-tooltip"
+                data-tooltip-content={this.props.t("Admin")}
+                data-tooltip-place="left"
+              >
+                <span
+                  className="icon-user setting-icon"
+                  style={{ fontSize: "25px" }}
+                ></span>
+              </span>
+            </div>
+          )}
           <div
             className="setting-icon-container"
             onClick={() => {

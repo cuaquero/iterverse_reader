@@ -1282,5 +1282,6 @@
   "Book catalog": "Book catalog",
   "Could not open": "Could not open",
   "Failed to load the catalog": "Failed to load the catalog",
-  "Retry": "Retry"
+  "Retry": "Retry",
+  "Admin": "Admin"
 }
