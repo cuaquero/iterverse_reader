@@ -176,6 +176,28 @@
   margin-top: 10px;
 }
 
+.admin-cover-preview {
+  width: 40px;
+  height: 56px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.15);
+  flex: 0 0 auto;
+}
+
+.admin-cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-extracting-hint {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 8px;
+}
+
 .admin-table-wrapper {
   overflow-x: auto;
   border-radius: 12px;

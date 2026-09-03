@@ -4,6 +4,7 @@ import { AdminProps, AdminState, AdminBook, AdminUserRow } from "./interface";
 import { withRouter } from "react-router-dom";
 import { Trans } from "react-i18next";
 import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
+import { extractBookMetadata } from "../../utils/file/bookMetadataExtractor";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -23,6 +24,10 @@ function formatDate(iso: string | null): string {
 }
 
 class Admin extends React.Component<AdminProps, AdminState> {
+  // Bumped on every book-file selection so a slow extractBookMetadata() call
+  // for a file the admin has since replaced can't clobber state after the fact.
+  private extractionSeq = 0;
+
   constructor(props: AdminProps) {
     super(props);
     this.state = {
@@ -38,6 +43,8 @@ class Admin extends React.Component<AdminProps, AdminState> {
       uploadAuthor: "",
       uploadFile: null,
       uploadCover: null,
+      uploadCoverPreviewUrl: null,
+      isExtractingMetadata: false,
       isUploading: false,
       uploadError: null,
 
@@ -50,6 +57,16 @@ class Admin extends React.Component<AdminProps, AdminState> {
   componentDidMount() {
     this.checkAccess();
   }
+
+  componentWillUnmount() {
+    this.revokeCoverPreview();
+  }
+
+  revokeCoverPreview = () => {
+    if (this.state.uploadCoverPreviewUrl) {
+      URL.revokeObjectURL(this.state.uploadCoverPreviewUrl);
+    }
+  };
 
   checkAccess = async () => {
     try {
@@ -93,6 +110,59 @@ class Admin extends React.Component<AdminProps, AdminState> {
     }
   };
 
+  // Auto-extract title/author/cover from the selected book file, the same
+  // way personal import always has (see ImportLocal.handleBook and
+  // src/utils/file/bookMetadataExtractor.ts). Extraction only fills in
+  // fields that come back non-empty and never overwrites text the admin has
+  // already typed, so it's always safe to re-run when the file changes. A
+  // format with no extractable metadata (txt, docx, html, ...) or a parse
+  // failure simply leaves manual entry in place - upload is never blocked.
+  handleBookFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    const seq = ++this.extractionSeq;
+
+    this.revokeCoverPreview();
+    this.setState({
+      uploadFile: file,
+      uploadCover: null,
+      uploadCoverPreviewUrl: null,
+      uploadError: null,
+    });
+
+    if (!file) return;
+
+    this.setState({ isExtractingMetadata: true });
+    let extracted: Awaited<ReturnType<typeof extractBookMetadata>> = null;
+    try {
+      extracted = await extractBookMetadata(file);
+    } catch (error) {
+      console.error("Book metadata extraction failed:", error);
+    }
+
+    // A different file was picked while this extraction was still running -
+    // its result no longer applies.
+    if (seq !== this.extractionSeq) return;
+
+    this.setState((prev) => ({
+      uploadTitle: extracted?.title ? extracted.title : prev.uploadTitle,
+      uploadAuthor: extracted?.author ? extracted.author : prev.uploadAuthor,
+      uploadCover: extracted?.coverFile || null,
+      uploadCoverPreviewUrl: extracted?.coverFile
+        ? URL.createObjectURL(extracted.coverFile)
+        : null,
+      isExtractingMetadata: false,
+    }));
+  };
+
+  handleManualCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    this.revokeCoverPreview();
+    this.setState({
+      uploadCover: file,
+      uploadCoverPreviewUrl: file ? URL.createObjectURL(file) : null,
+    });
+  };
+
   handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     const { uploadFile, uploadCover, uploadTitle, uploadAuthor } = this.state;
@@ -116,11 +186,13 @@ class Admin extends React.Component<AdminProps, AdminState> {
         body: form,
       });
       if (!res.ok) throw new Error(await res.text());
+      this.revokeCoverPreview();
       this.setState({
         uploadTitle: "",
         uploadAuthor: "",
         uploadFile: null,
         uploadCover: null,
+        uploadCoverPreviewUrl: null,
         isUploading: false,
       });
       (document.getElementById("admin-upload-form") as HTMLFormElement)?.reset();
@@ -177,8 +249,17 @@ class Admin extends React.Component<AdminProps, AdminState> {
   }
 
   renderBooksTab() {
-    const { books, booksError, deletingBookId, uploadTitle, uploadAuthor, isUploading, uploadError } =
-      this.state;
+    const {
+      books,
+      booksError,
+      deletingBookId,
+      uploadTitle,
+      uploadAuthor,
+      uploadCoverPreviewUrl,
+      isExtractingMetadata,
+      isUploading,
+      uploadError,
+    } = this.state;
     return (
       <>
         <form id="admin-upload-form" className="admin-upload-form" onSubmit={this.handleUpload}>
@@ -186,6 +267,15 @@ class Admin extends React.Component<AdminProps, AdminState> {
             <Trans>Add a book</Trans>
           </div>
           <div className="admin-upload-fields">
+            <label className="admin-file-label">
+              <Trans>Book file</Trans>
+              <input type="file" onChange={this.handleBookFileChange} />
+            </label>
+            {uploadCoverPreviewUrl && (
+              <div className="admin-cover-preview">
+                <img src={uploadCoverPreviewUrl} alt="" />
+              </div>
+            )}
             <input
               type="text"
               placeholder={this.props.t("Title (optional)")}
@@ -199,24 +289,20 @@ class Admin extends React.Component<AdminProps, AdminState> {
               onChange={(e) => this.setState({ uploadAuthor: e.target.value })}
             />
             <label className="admin-file-label">
-              <Trans>Book file</Trans>
-              <input
-                type="file"
-                onChange={(e) => this.setState({ uploadFile: e.target.files?.[0] || null })}
-              />
-            </label>
-            <label className="admin-file-label">
-              <Trans>Cover (optional)</Trans>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => this.setState({ uploadCover: e.target.files?.[0] || null })}
-              />
+              {uploadCoverPreviewUrl
+                ? this.props.t("Replace cover (optional)")
+                : this.props.t("Cover (optional)")}
+              <input type="file" accept="image/*" onChange={this.handleManualCoverChange} />
             </label>
             <button type="submit" disabled={isUploading} className="admin-primary-btn">
               {isUploading ? this.props.t("Uploading...") : this.props.t("Upload")}
             </button>
           </div>
+          {isExtractingMetadata && (
+            <div className="admin-extracting-hint">
+              <Trans>Detecting title, author and cover from the book file...</Trans>
+            </div>
+          )}
           {uploadError && <div className="admin-error">{uploadError}</div>}
         </form>
 

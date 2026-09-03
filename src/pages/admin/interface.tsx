@@ -40,6 +40,8 @@ export interface AdminState {
   uploadAuthor: string;
   uploadFile: File | null;
   uploadCover: File | null;
+  uploadCoverPreviewUrl: string | null;
+  isExtractingMetadata: boolean;
   isUploading: boolean;
   uploadError: string | null;
 
