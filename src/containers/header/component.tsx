@@ -615,6 +615,39 @@ class Header extends React.Component<HeaderProps, HeaderState> {
               </span>
             </div>
           )}
+          {/* Log Out was previously only reachable via Settings -> Account,
+              a couple of clicks deep. Same real logout sequence as that
+              button (see accountSetting/component.tsx's handleLogout):
+              clear the actual session cookie server-side, then a full
+              navigation to "/" so Redirect's own auth check runs fresh and
+              lands back on the sign-in screen - matches how the labs app
+              puts Log Out directly in the header rather than burying it in
+              settings. */}
+          {this.props.isAuthed && (
+            <div
+              className="setting-icon-container"
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                } catch (error) {
+                  console.error("Failed to clear the server session:", error);
+                }
+                window.location.href = "/";
+              }}
+              style={{ marginTop: "2px" }}
+            >
+              <span
+                data-tooltip-id="my-tooltip"
+                data-tooltip-content={this.props.t("Log out")}
+                data-tooltip-place="left"
+              >
+                <span
+                  className="icon-exit setting-icon"
+                  style={{ fontSize: "25px" }}
+                ></span>
+              </span>
+            </div>
+          )}
           <div
             className="setting-icon-container"
             onClick={() => {
