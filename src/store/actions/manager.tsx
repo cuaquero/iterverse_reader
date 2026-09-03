@@ -543,18 +543,20 @@ export function handleFetchPlugins() {
     });
   };
 }
+// "Authed" here means "has a real Iterverse platform session"
+// (functions/lib/session.ts, checked via /api/auth/me) - not the old
+// TokenService.getToken("is_authed") check this replaced, which only ever
+// reflected Koodo's own OAuth completing. That never happens through
+// Cloudflare Access sign-in, so isAuthed would have stayed false forever
+// for every real user of this deployment if this still checked that token.
 export function handleFetchAuthed() {
-  return (dispatch: Dispatch) => {
+  return async (dispatch: Dispatch) => {
     try {
-      TokenService.getToken("is_authed").then((value) => {
-        let isAuthed = value === "yes";
-        if (isAuthed && !ConfigService.getItem("serverRegion")) {
-          ConfigService.setItem("serverRegion", "global");
-        }
-        dispatch(handleAuthed(isAuthed));
-      });
+      const response = await fetch("/api/auth/me");
+      dispatch(handleAuthed(response.ok));
     } catch (error) {
       console.error(error);
+      dispatch(handleAuthed(false));
     }
   };
 }
