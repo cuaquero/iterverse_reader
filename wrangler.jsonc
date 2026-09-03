@@ -6,7 +6,16 @@
   "compatibility_flags": ["nodejs_compat"],
 
   "vars": {
-    "ALLOWED_EMAIL_DOMAIN": "btech.edu"
+    "ALLOWED_EMAIL_DOMAIN": "btech.edu",
+    // Not secret - a team domain and an audience tag are just identifiers,
+    // visible in the Zero Trust dashboard and every Access redirect URL
+    // (see ad_labs' admin.ts/enroll.ts for the canonical version of this
+    // comment). Moved here from hardcoded consts in
+    // functions/api/auth/access.ts while that file was already being
+    // touched to add the roster entitlement check.
+    "ACCESS_TEAM_DOMAIN": "dawn-mountain-9c54.cloudflareaccess.com",
+    "ACCESS_AUD": "52aca4c1ec4ca7bd2db28415c215e77a6ecf8516b1625e11de25f0b68c10363a",
+    "ROSTER_API_URL": "https://roster-api.iterverse.net"
   },
 
   "d1_databases": [

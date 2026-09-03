@@ -18,4 +18,9 @@ interface Env {
   // has no other way to distinguish your Canvas admin from anyone else who
   // finds the URL, since it's what establishes trust in the first place.
   LTI_REGISTRATION_SECRET?: string;
+  // Shared secret this app presents to the Iterverse roster service's
+  // entitlement check (see iterverse_hub/worker/src/entitlement.ts) -
+  // `wrangler pages secret put ROSTER_SERVICE_KEY`. Same value the roster
+  // service issued via its own `wrangler secret put SERVICE_KEY`.
+  ROSTER_SERVICE_KEY?: string;
 }

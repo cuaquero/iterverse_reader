@@ -26,20 +26,28 @@ import { verifyAccessJwt } from "../../lib/access";
 import { appBaseUrl, createSession, setCookieHeader, SESSION_COOKIE, SESSION_TTL_SECONDS } from "../../lib/session";
 import { upsertUser } from "../../lib/users";
 
-// Not secret - see ad_labs's admin.ts/enroll.ts for the identical comment
-// on why: a team domain and an audience tag are just identifiers, visible
-// in the Zero Trust dashboard and every Access redirect URL. Team domain
-// is account-wide, shared with every other Iterverse service. This AUD is
-// specific to whichever Access Application protects this route - get it
-// from that Application's Overview tab in the Zero Trust dashboard.
-export const ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com";
-export const ACCESS_AUD = "52aca4c1ec4ca7bd2db28415c215e77a6ecf8516b1625e11de25f0b68c10363a";
+// checkRosterEntitlement's own header comment explains why this call sits
+// here rather than in a shared _middleware.ts - it needs the verified
+// email, which only exists after verifyAccessJwt succeeds.
+async function checkRosterEntitlement(env: Env, email: string): Promise<boolean> {
+  const response = await fetch(`${env.ROSTER_API_URL}/api/entitlement/check`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.ROSTER_SERVICE_KEY}`,
+    },
+    body: JSON.stringify({ email, product: "reader" }),
+  });
+  if (!response.ok) return false;
+  const data = await response.json<{ entitled?: boolean }>().catch(() => ({ entitled: false }));
+  return data.entitled === true;
+}
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const base = appBaseUrl(ctx.request, ctx.env);
 
   const jwt = ctx.request.headers.get("Cf-Access-Jwt-Assertion");
-  const email = jwt ? await verifyAccessJwt(jwt, ACCESS_TEAM_DOMAIN, ACCESS_AUD) : null;
+  const email = jwt ? await verifyAccessJwt(jwt, ctx.env.ACCESS_TEAM_DOMAIN, ctx.env.ACCESS_AUD) : null;
   if (!email) {
     return new Response("Sign-in required.", { status: 403 });
   }
@@ -49,6 +57,17 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   // yet, which is exactly why labs' own enroll.ts (this route's model)
   // never restricted by domain either: OTP proving control of *an* email
   // address is the entire point, not which domain it's on.
+
+  // Reader's entitlement rule, per ad_labs/docs/unified-identity-v2-draft.md's
+  // resolution: implied by any active enrollment in any course, anywhere -
+  // not a per-course grant like Simulations/CLI/Packets/Scripts. Rejecting
+  // here, before upsertUser/createSession, mirrors the same "reject before
+  // creating a session" seam the Google/Microsoft callbacks already use for
+  // their own domain check (isAllowedEmail).
+  const entitled = await checkRosterEntitlement(ctx.env, email);
+  if (!entitled) {
+    return new Response(null, { status: 302, headers: { Location: `${base}/#/no-access` } });
+  }
 
   const user = await upsertUser(ctx.env.DB, {
     email,
