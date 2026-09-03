@@ -1283,5 +1283,7 @@
   "Could not open": "Could not open",
   "Failed to load the catalog": "Failed to load the catalog",
   "Retry": "Retry",
-  "Admin": "Admin"
+  "Admin": "Admin",
+  "Replace cover (optional)": "Replace cover (optional)",
+  "Detecting title, author and cover from the book file...": "Detecting title, author and cover from the book file..."
 }
