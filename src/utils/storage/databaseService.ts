@@ -1,9 +1,9 @@
 import { isElectron } from "react-device-detect";
 import { getStorageLocation } from "../common";
-import localforage from "localforage";
 import SqlUtil from "../file/sqlUtil";
 import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
 import { LocalFileManager } from "../file/localFile";
+import { deleteRemoteRecords, fetchRemoteRecords, saveRemoteRecords } from "./remoteDb";
 declare var window: any;
 
 class DatabaseService {
@@ -38,8 +38,7 @@ class DatabaseService {
         let records = sqlUtil.dbBufferToJson(dbBuffer, dbName);
         return records;
       } else {
-        const records = (await localforage.getItem(dbName)) || [];
-        return records;
+        return await fetchRemoteRecords(dbName);
       }
     }
   }
@@ -79,7 +78,7 @@ class DatabaseService {
         let dbBuffer = await sqlUtil.JsonToDbBuffer(records, dbName);
         await LocalFileManager.saveFile(dbName + ".db", dbBuffer, "config");
       } else {
-        await localforage.setItem(dbName, records);
+        await saveRemoteRecords(dbName, records);
       }
       for (let record of records) {
         if (isRecord) {
@@ -123,7 +122,7 @@ class DatabaseService {
       if (ConfigService.getItem("isUseLocal") === "yes") {
         await LocalFileManager.deleteFile(dbName + ".db", "config");
       } else {
-        await localforage.removeItem(dbName);
+        await deleteRemoteRecords(dbName);
       }
     }
   }
