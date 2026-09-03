@@ -50,6 +50,7 @@ export type stateType = {
     isShowNew: boolean;
     userInfo: any;
     isAuthed: boolean;
+    role: "student" | "admin" | null;
     isNewWarning: boolean;
     isSelectBook: boolean;
     selectedBooks: string[];

@@ -17,6 +17,7 @@ export interface ManagerProps extends RouteComponentProps<any> {
   isShowNew: boolean;
   isShowSupport: boolean;
   isAuthed: boolean;
+  role: "student" | "admin" | null;
   isOpenSortShelfDialog: boolean;
   isOpenLocalFileDialog: boolean;
   isOpenOPDSDialog: boolean;

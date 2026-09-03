@@ -678,11 +678,17 @@ class Header extends React.Component<HeaderProps, HeaderState> {
           </div>
         ) : null}
 
-        <ImportLocal
-          {...({
-            handleDrag: this.props.handleDrag,
-          } as any)}
-        />
+        {/* Personal import is an admin-only capability here: students read
+            from the shared catalog (see src/pages/catalog) and can't add
+            their own files, so the drop target/import button shouldn't
+            even be reachable for them. */}
+        {this.props.role === "admin" && (
+          <ImportLocal
+            {...({
+              handleDrag: this.props.handleDrag,
+            } as any)}
+          />
+        )}
         <UpdateInfo />
       </div>
     );

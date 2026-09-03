@@ -94,6 +94,9 @@ export function handleLoadMore(isLoadMore: boolean) {
 export function handleAuthed(isAuthed: boolean) {
   return { type: "HANDLE_AUTHED", payload: isAuthed };
 }
+export function handleRole(role: "student" | "admin" | null) {
+  return { type: "HANDLE_ROLE", payload: role };
+}
 export function handleBookSortCode(bookSortCode: {
   sort: number;
   order: number;
@@ -554,9 +557,16 @@ export function handleFetchAuthed() {
     try {
       const response = await fetch("/api/auth/me");
       dispatch(handleAuthed(response.ok));
+      if (response.ok) {
+        const data = await response.json();
+        dispatch(handleRole(data?.user?.role || null));
+      } else {
+        dispatch(handleRole(null));
+      }
     } catch (error) {
       console.error(error);
       dispatch(handleAuthed(false));
+      dispatch(handleRole(null));
     }
   };
 }

@@ -171,6 +171,18 @@ class Manager extends React.Component<ManagerProps, ManagerState> {
             e.preventDefault();
             e.stopPropagation();
             this.handleDrag(false);
+            // Personal import is admin-only: students only ever get books
+            // through the shared catalog (src/pages/catalog), so a dropped
+            // file here must be a no-op rather than silently importing it
+            // into their private, unreviewed library.
+            if (this.props.role !== "admin") {
+              toast(
+                this.props.t(
+                  "Ask an admin to add books to the catalog"
+                )
+              );
+              return;
+            }
             const collectFiles = (entry: FileSystemEntry): Promise<File[]> => {
               return new Promise((resolve) => {
                 if (entry.isFile) {

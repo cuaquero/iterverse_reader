@@ -7,6 +7,7 @@ const initState = {
   isShowPopupNote: false,
   isAboutOpen: false,
   isAuthed: false,
+  role: null,
   userInfo: null,
   userConfig: null,
   isSettingOpen: false,
@@ -86,6 +87,15 @@ export function manager(
       return {
         ...state,
         isAuthed: action.payload,
+      };
+    // Separate from HANDLE_AUTHED because "signed in" and "signed in as
+    // admin" gate different things: isAuthed already existed for sync/AI
+    // features, while role is what the student-vs-admin catalog gating
+    // (header import button, drag-drop import, /manager/home content) needs.
+    case "HANDLE_ROLE":
+      return {
+        ...state,
+        role: action.payload,
       };
     case "HANDLE_SELECTED_BOOKS":
       return {

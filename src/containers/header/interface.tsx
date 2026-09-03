@@ -8,6 +8,7 @@ export interface HeaderProps extends RouteComponentProps<any> {
   isNewWarning: boolean;
   isLoadMore: boolean;
   isAuthed: boolean;
+  role: "student" | "admin" | null;
   currentBook: Book;
   defaultSyncOption: string;
   mode: string;

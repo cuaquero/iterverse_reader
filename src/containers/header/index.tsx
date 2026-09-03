@@ -31,6 +31,7 @@ const mapStateToProps = (state: stateType) => {
     currentBook: state.book.currentBook,
     mode: state.sidebar.mode,
     isAuthed: state.manager.isAuthed,
+    role: state.manager.role,
     defaultSyncOption: state.backupPage.defaultSyncOption,
     userInfo: state.manager.userInfo,
     isLoadMore: state.manager.isLoadMore,
