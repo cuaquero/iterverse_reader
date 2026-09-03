@@ -4,13 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This repo (koodo-bridge) is a BTECH (Bridgerland Technical College) customization fork of Koodo Reader: a pure web ebook reader (React CRA + Redux), deployed on Cloudflare (`books.itstem.org`), with plans to embed it in Canvas LMS via LTI (not started yet).
+This repo (koodo-bridge) is a BTECH (Bridgerland Technical College) customization fork of Koodo Reader: a pure web ebook reader (React CRA + Redux), deployed on Cloudflare (`reader.iterverse.net`, migrated from `books.itstem.org` - see ad_labs's `docs/admin-scope.md` for the migration itself). LTI/Canvas embedding is deprioritized indefinitely (BTECH's own call - "unlikely to happen") in favor of the platform auth described below; `LTI.md`'s plan and scaffolding are left in place but not the active direction.
 
 **Product name**: the app is **Iterverse Reader** (renamed from "Bindo", which was itself a rename from "BTECH Reader" - `git log --grep=Bindo` and `--grep=Iterverse` find those commits). It's part of **Iterverse**, BTECH IT's umbrella platform alongside the labs app (`ad_labs` repo) - that repo's `design-system/` folder is the canonical source for the Iterverse mark, wordmark, and brand tokens; `src/components/iterverseMark/` and `src/assets/styles/btech-tokens.css` here are this app's own copies of that same system (the token *variable names* stayed `--btech-*` since ~11 CSS rules already consume them and the actual hex values are identical either way - only the product name and mark changed, not the token naming). "Koodo Reader" branding was left in place anywhere it's tied to real behavior rather than display text: `isEnableKoodoSync`/`KoodoFileSystemDB` (stored user config/IndexedDB names - renaming risks orphaning existing users' data), the literal `KoodoReader` sync-folder convention and the real "Koodo Reader" browser extension (both are genuine third-party interop, not this app's own branding), and the device-limit error message (tied to Koodo's own hosted account system, not yet relevant since BTECH's own backend isn't wired up). The upstream login carousel's mobile-app/Pro-tier marketing steps (originally `currentStep` 0/1/4's content) were stripped rather than relabeled, since this fork has no mobile app or paid tier to advertise - the login flow now starts directly at the real sign-in step.
 
 **Important change**: upstream Koodo Reader is a cross-platform Electron app, but this fork has completely removed Electron packaging — no `main.js`, no native SQLite (better-sqlite3), no desktop installers/IPC channels. All database operations now go through browser-side storage (IndexedDB via `localforage`, or the File System Access API for local-folder sync) — see the non-Electron branch of `src/utils/storage/databaseService.ts`. The code still has plenty of `isElectron` (from `react-device-detect`) branches and `window.require("electron")` calls — these never execute in this fork (`isElectron` is always `false`) and are intentionally-left dead code, not bugs. No need to clean them up unless there's a new reason to bring Electron back.
 
-**Cloudflare backend**: `functions/` holds a set of Pages Functions (Google/Microsoft OAuth login, a generic sync API keyed by `dbName`, a shared book-catalog API), backed by D1 (`migrations/`), R2, and KV. See **[CLOUDFLARE.md](./CLOUDFLARE.md)** for the full picture — required secrets, local dev, migrations, deployment. **The client isn't wired up to this backend yet** (login buttons still point at Koodo's own backend, `DatabaseService` still uses `localforage`) because the OAuth app registrations are waiting on BTECH's approval. In the meantime, `functions/_middleware.ts` intercepts every request outside `/api/*` with a temporary "under construction" page — that's intentional, not a bug, so don't delete it by accident, but also don't forget to remove it before actually going live.
+**Cloudflare backend**: `functions/` holds a set of Pages Functions (OAuth/Access login, a generic sync API keyed by `dbName`, a shared book-catalog API), backed by D1 (`migrations/`), R2, and KV. See **[CLOUDFLARE.md](./CLOUDFLARE.md)** for the full picture — required secrets, local dev, migrations, deployment.
+
+**The client IS wired up to this backend now** (this was the single biggest gap for most of this project's life - if you're reading old context that says otherwise, it's stale). The real, live sign-in path is **`functions/api/auth/access.ts`**, not Google/Microsoft OAuth: it sits behind a Cloudflare Access Application (One-Time PIN, no external app registration needed - see `platform-auth/README.md` in the `ad_labs` repo for the identity model, shared across Iterverse). Google/Microsoft OAuth (`functions/api/auth/google*`, `microsoft*`) are still scaffolded and functional server-side but their client-side entry points are hidden (`src/pages/login/component.tsx`) until BTECH provisions student accounts - don't remove that scaffolding, just don't expect it reachable from the UI. `src/utils/storage/databaseService.ts`'s web-mode methods now call the real backend (`functions/api/db/[dbName].ts`) when signed in, falling back to `localforage` when not (see `src/utils/storage/remoteDb.ts` - this fallback is deliberate, not a bug: Koodo has always allowed fully signed-out use, and a 401 used to mean silent data loss before this fallback existed). `functions/_middleware.ts` (the "under construction" gate) has been **removed** - the app is live for real, not a bug if you don't see it anymore.
+
+**Roles**: `users.role` is `"student"` or `"admin"` (default: student; promoting the *first* admin requires a direct D1 `UPDATE` - there's a bootstrapping chicken-and-egg here since the in-app role-toggle at `/admin` requires already being admin to reach it). Role drives real UI differences, not just permissions: `/manager/home` shows `HomeList` (`src/containers/lists/homeList/`), which renders the student's `Catalog` (`src/pages/catalog/`, browses `GET /api/books`, downloads+imports on click) or the admin's normal personal `BookList`. Personal file import (header's `ImportLocal`, and manager's drag-and-drop) is gated to `role === "admin"` - students can't import their own files by design, only read what an admin has curated via `/admin` (which also does client-side metadata/cover auto-extraction on upload, reusing `src/utils/file/bookMetadataExtractor.ts`, the same Kookit parsing personal import always used).
+
+**Settings surface was substantially cut down** from upstream: no Plugins tab, no AI service tab, no "Ask AI"/Translate/AI-Encyclopedia popups, no third-party OAuth account-linking, no third-party cloud-drive sync (Dropbox/WebDAV/etc, all were Pro-gated anyway) - all of it either had no story for a Cloudflare Access + admin-curated-catalog deployment, or (the AI features specifically) would have silently sent real student reading data to Koodo's own unsubscribed cloud AI once `isAuthed` started meaning "real session" instead of "Pro subscriber". Local zip backup/restore and per-book exports (notes/highlights/dictionary history) were kept. If you're looking for one of the removed tabs/features and it's not there, it was a deliberate removal, not something broken - check `git log --oneline` around "Remove AI, plugin marketplace" for the full reasoning.
 
 ### Architecture Layers
 
@@ -89,12 +95,11 @@ Deployment, migration, and local-dev commands for the Cloudflare backend (Functi
 ```
 .
 ├── functions/              # Cloudflare Pages Functions (see CLOUDFLARE.md)
-│   ├── _middleware.ts      # ⚠️ currently intercepts everything outside /api/* with an "under construction" page
 │   ├── api/
-│   │   ├── auth/           # Google/Microsoft OAuth login + session
+│   │   ├── auth/           # access.ts = real live sign-in (Cloudflare Access OTP); google/microsoft = scaffolded, not wired into the UI yet
 │   │   ├── db/[dbName].ts  # Generic sync API, mirrors DatabaseService's web branch
 │   │   └── books/          # Shared book-catalog API (list/upload/download; admin-only add/remove)
-│   └── lib/                # Shared helpers (session, oauth, auth checks, R2 streaming)
+│   └── lib/                # Shared helpers (session, oauth, access, auth checks, R2 streaming)
 ├── migrations/             # D1 database migrations (wrangler d1 migrations)
 ├── wrangler.jsonc          # Cloudflare Pages config (D1/R2/KV bindings)
 ├── httpserver/             # Go HTTP service (KOReader/OPDS)
@@ -114,7 +119,7 @@ Deployment, migration, and local-dev commands for the Cloudflare backend (Functi
 │   │   ├── sidebar/        # Sidebar
 │   │   └── viewer/         # Book reading view
 │   ├── models/             # Data models (Book, Bookmark, Note, HtmlBook, Plugin)
-│   ├── pages/              # Page-level components (manager, reader, login, redirect, stats)
+│   ├── pages/              # Page-level components (manager, reader, login, redirect, stats, catalog, admin)
 │   ├── router/             # React Router config
 │   ├── store/              # Redux (actions + reducers)
 │   └── utils/              # Utilities
