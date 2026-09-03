@@ -14,9 +14,7 @@ import {
   generateSyncRecord,
   getICloudDrivePath,
   getServerRegion,
-  getWebsiteUrl,
   handleContextMenu,
-  openExternalUrl,
   openInBrowser,
   showTaskProgress,
   testConnection,
@@ -874,22 +872,6 @@ class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
                     <Trans>Test</Trans>
                   </div>
                 )}
-                {(this.props.settingDrive === "webdav" ||
-                  this.props.settingDrive === "ftp" ||
-                  this.props.settingDrive === "s3compatible" ||
-                  this.props.settingDrive === "sftp") &&
-                  ConfigService.getReaderConfig("lang") &&
-                  ConfigService.getReaderConfig("lang").startsWith("zh") && (
-                    <div
-                      className="voice-add-cancel"
-                      style={{ borderWidth: 0, lineHeight: "30px" }}
-                      onClick={() => {
-                        openExternalUrl(getWebsiteUrl() + "/zh/add-source");
-                      }}
-                    >
-                      {this.props.t("How to fill out")}
-                    </div>
-                  )}
               </div>
             </div>
           </div>

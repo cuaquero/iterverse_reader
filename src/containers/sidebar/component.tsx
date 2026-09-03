@@ -5,7 +5,6 @@ import { sideMenu } from "../../constants/sideMenu";
 import { SidebarProps, SidebarState } from "./interface";
 import { withRouter } from "react-router-dom";
 import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
-import { getWebsiteUrl, openInBrowser } from "../../utils/common";
 import { Trans } from "react-i18next";
 import toast from "react-hot-toast";
 import {
@@ -80,9 +79,6 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
     this.setState({ isCollapsed });
     this.props.handleCollapse(isCollapsed);
     ConfigService.setReaderConfig("isCollapsed", isCollapsed ? "yes" : "no");
-  };
-  handleJump = (url: string) => {
-    openInBrowser(url);
   };
   handleCreateShelf = () => {
     if (!this.state.newShelfName) {
@@ -395,9 +391,6 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
                 : "#36393b"
             }
             className="logo iterverse-mark"
-            onClick={() => {
-              this.handleJump(getWebsiteUrl());
-            }}
             style={this.state.isCollapsed ? { display: "none" } : {}}
           />
           <div

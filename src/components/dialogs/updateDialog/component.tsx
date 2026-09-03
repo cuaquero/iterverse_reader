@@ -4,7 +4,6 @@ import { UpdateInfoProps, UpdateInfoState } from "./interface";
 import { Trans } from "react-i18next";
 import Lottie from "lottie-react";
 import animationNew from "../../../assets/lotties/new.json";
-import { getWebsiteUrl, openExternalUrl } from "../../../utils/common";
 import { handleClearToken } from "../../../utils/request/common";
 import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import toast from "react-hot-toast";
@@ -150,24 +149,6 @@ class UpdateInfo extends React.Component<UpdateInfoProps, UpdateInfoState> {
                           );
                         }, 500);
                       }
-                    } else {
-                      let lang = "en";
-                      if (
-                        ConfigService.getReaderConfig("lang") &&
-                        ConfigService.getReaderConfig("lang").startsWith("zh")
-                      ) {
-                        lang = "zh";
-                      }
-                      openExternalUrl(
-                        getWebsiteUrl() +
-                          "/" +
-                          lang +
-                          "/download" +
-                          "?version=" +
-                          (this.state.updateLog.stable === "yes"
-                            ? "stable"
-                            : "developer")
-                      );
                     }
                   }}
                 >
@@ -178,32 +159,6 @@ class UpdateInfo extends React.Component<UpdateInfoProps, UpdateInfoState> {
                   )}
                 </div>
               </div>
-              {isWindows && (
-                <div
-                  className="new-version-skip"
-                  onClick={() => {
-                    let lang = "en";
-                    if (
-                      ConfigService.getReaderConfig("lang") &&
-                      ConfigService.getReaderConfig("lang").startsWith("zh")
-                    ) {
-                      lang = "zh";
-                    }
-                    openExternalUrl(
-                      getWebsiteUrl() +
-                        "/" +
-                        lang +
-                        "/download" +
-                        "?version=" +
-                        (this.state.updateLog.stable === "yes"
-                          ? "stable"
-                          : "developer")
-                    );
-                  }}
-                >
-                  <Trans>Download in Browser</Trans>
-                </div>
-              )}
               {this.state.updateLog.stable !== "yes" && (
                 <div
                   className="new-version-skip"

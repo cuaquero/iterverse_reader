@@ -6,7 +6,6 @@ import {
   confirmBrowserExtensionAsync,
   generateSyncRecord,
   getStorageLocation,
-  getWebsiteUrl,
   reloadManager,
   vexComfirmAsync,
   vexOpenAsync,
@@ -126,14 +125,7 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
         },
       },
       "",
-      labels,
-      getWebsiteUrl() +
-        `/${
-          ConfigService.getReaderConfig("lang") &&
-          ConfigService.getReaderConfig("lang").startsWith("zh")
-            ? "zh"
-            : "en"
-        }/add-thirdparty`
+      labels
     );
 
     if (!result) {
@@ -247,16 +239,7 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
         labelsMap[field.key] = this.props.t(field.label);
       }
 
-      const result = await vexOpenAsync(
-        defaultValues,
-        "",
-        labelsMap,
-        getWebsiteUrl() +
-          (ConfigService.getReaderConfig("lang").startsWith("zh")
-            ? "/zh"
-            : "/en") +
-          "/add-thirdparty"
-      );
+      const result = await vexOpenAsync(defaultValues, "", labelsMap);
 
       if (!result) {
         // User cancelled

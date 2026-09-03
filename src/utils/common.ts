@@ -158,19 +158,9 @@ export const confirmBrowserExtensionAsync = async (): Promise<boolean> => {
     return true;
   }
   const result = await vexComfirmAsync(
-    "Due to browser security restrictions, you may not be able to use this data source properly. If you encounter any issues, you can resolve them by installing our browser extension.",
-    "Confirm",
-    "Install extension"
+    "Due to browser security restrictions, you may not be able to use this data source properly."
   );
-  if (!result) {
-    const lang = ConfigService.getReaderConfig("lang");
-    openExternalUrl(
-      getWebsiteUrl() +
-        (lang?.startsWith("zh") ? "/zh/use-extension" : "/en/use-extension")
-    );
-    return false;
-  }
-  return true;
+  return !!result;
 };
 export function detectKoodoExtension(
   timeoutMs = 500
@@ -918,8 +908,6 @@ export const getDefaultTransTarget = (langList) => {
   );
   return langMap[langTarget || "English"];
 };
-export const WEBSITE_URL = "https://koodoreader.com";
-export const CN_WEBSITE_URL = "https://koodoreader.cn";
 export const getServerRegion = () => {
   let isUseCN = false;
   if (ConfigService.getItem("serverRegion")) {
@@ -934,9 +922,6 @@ export const getServerRegion = () => {
     }
   }
   return isUseCN ? "china" : "global";
-};
-export const getWebsiteUrl = () => {
-  return getServerRegion() === "china" ? CN_WEBSITE_URL : WEBSITE_URL;
 };
 export const formatTimestamp = (timestamp) => {
   if (!timestamp) return "";

@@ -5,7 +5,6 @@ import { Trans } from "react-i18next";
 import toast from "react-hot-toast";
 import {
   checkPlugin,
-  getWebsiteUrl,
   handleContextMenu,
   openExternalUrl,
 } from "../../../utils/common";
@@ -105,22 +104,6 @@ class SettingDialog extends React.Component<
                 >
                   <Trans>Cancel</Trans>
                 </div>
-                <div
-                  className="voice-add-cancel"
-                  style={{ marginRight: "10px" }}
-                  onClick={() => {
-                    if (
-                      ConfigService.getReaderConfig("lang") &&
-                      ConfigService.getReaderConfig("lang").startsWith("zh")
-                    ) {
-                      openExternalUrl(getWebsiteUrl() + "/zh/plugin");
-                    } else {
-                      openExternalUrl(getWebsiteUrl() + "/en/plugin");
-                    }
-                  }}
-                >
-                  <Trans>Document</Trans>
-                </div>
               </div>
             </div>
           </div>
@@ -188,21 +171,6 @@ class SettingDialog extends React.Component<
               );
             })}
         <div className="setting-dialog-new-plugin">
-          <span
-            style={{ textDecoration: "underline", marginRight: "20px" }}
-            onClick={() => {
-              if (
-                ConfigService.getReaderConfig("lang") &&
-                ConfigService.getReaderConfig("lang").startsWith("zh")
-              ) {
-                openExternalUrl(getWebsiteUrl() + "/zh/plugin");
-              } else {
-                openExternalUrl(getWebsiteUrl() + "/en/plugin");
-              }
-            }}
-          >
-            <Trans>Visit online version</Trans>
-          </span>
           <span
             style={{ textDecoration: "underline" }}
             onClick={() => {

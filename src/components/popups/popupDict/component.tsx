@@ -13,7 +13,6 @@ import DictHistory from "../../../models/DictHistory";
 import { Trans } from "react-i18next";
 import {
   getFullTranslationTarget,
-  getWebsiteUrl,
   openExternalUrl,
 } from "../../../utils/common";
 import toast from "react-hot-toast";
@@ -237,9 +236,9 @@ class PopupDict extends React.Component<PopupDictProps, PopupDictState> {
           },
           () => {
             let moreElement = document.querySelector(".dict-learn-more");
-            if (moreElement) {
+            if (moreElement && window.learnMoreUrl) {
               moreElement.addEventListener("click", () => {
-                openExternalUrl(window.learnMoreUrl || getWebsiteUrl());
+                openExternalUrl(window.learnMoreUrl);
               });
             }
           }
