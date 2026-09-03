@@ -214,6 +214,30 @@ class Login extends React.Component<LoginProps, LoginState> {
                       </span>
                     </div>
                   </div>
+                  {/* Iterverse platform auth (Cloudflare Access, OTP) - see
+                      platform-auth/README.md in the ad_labs repo. The only
+                      login path actually wired to this app's own backend
+                      right now: LTI isn't happening, Google/Microsoft need
+                      BTECH student accounts provisioned first. A real <a>,
+                      not an onClick/fetch - this needs a top-level
+                      navigation for Access to intercept and run its OTP
+                      challenge before the request ever reaches
+                      /api/auth/access. */}
+                  <a
+                    className="login-option-container"
+                    href="/api/auth/access"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <div className="login-option-icon">
+                      <span
+                        className="icon-email login-option-icon"
+                        style={{ fontSize: "20px" }}
+                      ></span>
+                    </div>
+                    <div className="login-option-title">
+                      {this.props.t("Continue with your BTECH email")}
+                    </div>
+                  </a>
                   {loginList.map((item) => {
                     return (
                       <div

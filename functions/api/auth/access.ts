@@ -33,8 +33,8 @@ import { upsertUser } from "../../lib/users";
 // is account-wide, shared with every other Iterverse service. This AUD is
 // specific to whichever Access Application protects this route - get it
 // from that Application's Overview tab in the Zero Trust dashboard.
-const ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com";
-const ACCESS_AUD = "<fill in from the Access Application protecting this route>";
+export const ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com";
+export const ACCESS_AUD = "52aca4c1ec4ca7bd2db28415c215e77a6ecf8516b1625e11de25f0b68c10363a";
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const base = appBaseUrl(ctx.request, ctx.env);
