@@ -23,7 +23,6 @@
 // kept current independently. See unified-access-vision.md in ad_labs for
 // the still-open platform-wide revocation question.
 import { verifyAccessJwt } from "../../lib/access";
-import { isAllowedEmail } from "../../lib/oauth";
 import { appBaseUrl, createSession, setCookieHeader, SESSION_COOKIE, SESSION_TTL_SECONDS } from "../../lib/session";
 import { upsertUser } from "../../lib/users";
 
@@ -44,11 +43,12 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if (!email) {
     return new Response("Sign-in required.", { status: 403 });
   }
-  if (!isAllowedEmail(email, ctx.env.ALLOWED_EMAIL_DOMAIN)) {
-    return new Response(`Access is limited to @${ctx.env.ALLOWED_EMAIL_DOMAIN} accounts. Signed in as ${email}.`, {
-      status: 403,
-    });
-  }
+  // Deliberately no ALLOWED_EMAIL_DOMAIN check here, unlike the Google/
+  // Microsoft callbacks - this is platform auth for whoever OTP verified,
+  // not a school-tenant login. Students don't have @btech.edu accounts
+  // yet, which is exactly why labs' own enroll.ts (this route's model)
+  // never restricted by domain either: OTP proving control of *an* email
+  // address is the entire point, not which domain it's on.
 
   const user = await upsertUser(ctx.env.DB, {
     email,
