@@ -1,7 +1,7 @@
 export interface OAuthIdentity {
   email: string;
   name: string | null;
-  provider: "google" | "microsoft" | "lti";
+  provider: "google" | "microsoft" | "lti" | "access";
   sub: string;
 }
 
@@ -14,13 +14,20 @@ export interface UpsertedUser {
 // provider subject id rather than email alone where possible (emails can
 // theoretically be reassigned; the subject id can't).
 //
-// With LTI in the mix, though, the same person now legitimately signs in
-// through more than one provider (Canvas today, Microsoft 365 once BTECH
-// provisions student accounts), and email is the only claim both providers
-// share -- so a second provider match falls back to linking the existing
-// account by email rather than colliding with the UNIQUE(email) constraint.
-// This trades a little of the reassigned-email safety above for one account
-// per person across login methods, which is the tradeoff BTECH asked for.
+// With LTI (and now Iterverse platform auth) in the mix, though, the same
+// person legitimately signs in through more than one provider (Canvas,
+// Cloudflare Access's OTP, Microsoft 365 once BTECH provisions student
+// accounts), and email is the only claim they all share -- so a second
+// provider match falls back to linking the existing account by email
+// rather than colliding with the UNIQUE(email) constraint. This trades a
+// little of the reassigned-email safety above for one account per person
+// across login methods, which is the tradeoff BTECH asked for.
+//
+// "access" identities have no subject id distinct from the email itself
+// (Access's OTP flow only ever proves "this address," nothing else), so
+// their oauth_sub is just their own email -- the (provider, sub) match
+// above still works, it just degenerates to matching by email directly
+// for this one provider.
 export async function upsertUser(db: D1Database, identity: OAuthIdentity): Promise<UpsertedUser> {
   const byProvider = await db
     .prepare("SELECT id, role FROM users WHERE oauth_provider = ? AND oauth_sub = ?")
