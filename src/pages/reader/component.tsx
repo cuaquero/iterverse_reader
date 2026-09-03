@@ -431,26 +431,6 @@ class Reader extends React.Component<ReaderProps, ReaderState> {
               className={`icon-${this.props.isSpeechOpen ? "close" : "earphone"} next-chapter-single`}
             ></span>
           </div>
-          {ConfigService.getReaderConfig("isDisableAI") !== "yes" && (
-            <div
-              className="next-chapter-single-container"
-              onClick={async () => {
-                this.props.handleMenuMode("assistant");
-                this.props.handleOriginalText(
-                  await this.props.htmlBook.rendition.chapterText()
-                );
-                this.props.handleOpenMenu(true);
-              }}
-              style={{
-                position: "static",
-                transform: "rotate(0deg)",
-                fontWeight: "bold",
-                fontSize: "17px",
-              }}
-            >
-              AI
-            </div>
-          )}
           {this.props.currentBook.format === "PDF" &&
             !ConfigService.getAllListConfig("convertPDFBooks").includes(
               this.props.currentBook.key

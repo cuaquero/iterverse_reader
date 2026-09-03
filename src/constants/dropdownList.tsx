@@ -152,10 +152,6 @@ export const dropdownList = [
     option: [
       { label: "Default", value: "" },
       {
-        label: "Translate",
-        value: "translation",
-      },
-      {
         label: "Dictionary",
         value: "dict",
       },

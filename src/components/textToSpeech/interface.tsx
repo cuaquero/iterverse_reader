@@ -12,8 +12,6 @@ export interface TextToSpeechProps {
   speechStartText: string;
   isSpeechAutoStart: boolean;
   handleFetchPlugins: () => void;
-  handleSetting: (isShow: boolean) => void;
-  handleSettingMode: (settingMode: string) => void;
   handleSpeechStartText: (speechStartText: string) => void;
   handleSpeechAutoStart: (isSpeechAutoStart: boolean) => void;
   t: (title: string) => string;
@@ -26,14 +24,4 @@ export interface TextToSpeechState {
   voiceLocale: string;
   languageList: string[];
   voiceList: any;
-  multiRoleEnabled: boolean;
-  multiRoleVoiceType: string;
-  multiRoleNarratorVoice: string;
-  multiRoleMaleVoice: string;
-  multiRoleFemaleVoice: string;
-  multiRoleNarratorEngine: string;
-  multiRoleMaleEngine: string;
-  multiRoleFemaleEngine: string;
-  multiRoleChildVoice: string;
-  multiRoleChildEngine: string;
 }

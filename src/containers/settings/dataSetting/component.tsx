@@ -24,7 +24,6 @@ import { changeLibrary, changePath } from "../../../utils/file/common";
 import { getSnapshots } from "../../../utils/file/backup";
 import { restoreFromSnapshot } from "../../../utils/file/restore";
 import {
-  exportBooks,
   exportDictionaryHistory,
   exportHighlights,
   exportNotes,
@@ -658,23 +657,6 @@ class DataSetting extends React.Component<SettingInfoProps, SettingInfoState> {
             </p>
           </>
         )}
-        <div className="setting-dialog-new-title">
-          <Trans>Export all books</Trans>
-          <span
-            className="change-location-button"
-            onClick={async () => {
-              let books = await DatabaseService.getAllRecords("books");
-              if (books.length > 0) {
-                await exportBooks(books);
-                toast.success(this.props.t("Export successful"));
-              } else {
-                toast(this.props.t("Nothing to export"));
-              }
-            }}
-          >
-            <Trans>Export</Trans>
-          </span>
-        </div>
         <div className="setting-dialog-new-title">
           <Trans>Export all notes</Trans>
           <select

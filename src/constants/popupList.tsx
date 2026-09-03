@@ -7,14 +7,12 @@ export const POPUP_OPTION_ENABLED_CONFIG = "popupOptionEnabled";
 export type PopupOptionKey =
   | "note"
   | "highlight"
-  | "translation"
   | "copy"
   | "search-book"
   | "dict"
   | "browser"
   | "speaker"
-  | "speech-start"
-  | "assistant";
+  | "speech-start";
 
 export interface PopupOptionItem {
   key: PopupOptionKey;
@@ -37,13 +35,6 @@ export const popupList: PopupOptionItem[] = [
     name: "highlight",
     title: "Highlight",
     icon: "highlight",
-    defaultEnabled: true,
-  },
-  {
-    key: "translation",
-    name: "translation",
-    title: "Translate",
-    icon: "translation",
     defaultEnabled: true,
   },
   {
@@ -86,13 +77,6 @@ export const popupList: PopupOptionItem[] = [
     name: "speech-start",
     title: "Read from here",
     icon: "earphone",
-    defaultEnabled: true,
-  },
-  {
-    key: "assistant",
-    name: "assistant",
-    title: "Ask AI",
-    icon: "ai-assist",
     defaultEnabled: true,
   },
 ];

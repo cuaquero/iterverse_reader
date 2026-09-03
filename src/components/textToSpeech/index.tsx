@@ -4,8 +4,6 @@ import TextToSpeech from "./component";
 import { stateType } from "../../store";
 import {
   handleFetchPlugins,
-  handleSetting,
-  handleSettingMode,
   handleSpeechStartText,
   handleSpeechAutoStart,
 } from "../../store/actions";
@@ -23,8 +21,6 @@ const mapStateToProps = (state: stateType) => {
 };
 const actionCreator = {
   handleFetchPlugins,
-  handleSetting,
-  handleSettingMode,
   handleSpeechStartText,
   handleSpeechAutoStart,
 };

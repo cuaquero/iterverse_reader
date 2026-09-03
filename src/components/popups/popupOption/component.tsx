@@ -53,11 +53,6 @@ class PopupOption extends React.Component<PopupOptionProps> {
     }
     toast.success(this.props.t("Copying successful"));
   };
-  handleTrans = () => {
-    this.props.handleMenuMode("trans");
-    this.props.handleOriginalText(getSelection(this.props.currentBook.format));
-    this.props.handleOpenMenu(true);
-  };
   handleDict = () => {
     this.props.handleMenuMode("dict");
     this.props.handleOriginalText(getSelection(this.props.currentBook.format));
@@ -184,15 +179,6 @@ class PopupOption extends React.Component<PopupOptionProps> {
     this.props.handleOpenMenu(false);
   };
 
-  handleAssistant = () => {
-    const text = getSelection(this.props.currentBook.format);
-    if (!text) return;
-
-    this.props.handleQuoteText(text);
-    this.props.handleMenuMode("assistant");
-    this.props.handleOpenMenu(true);
-  };
-
   handleOpenPopupOptionDialog = () => {
     this.props.handleOpenMenu(false);
     this.props.handlePopupOptionDialog(true);
@@ -205,9 +191,6 @@ class PopupOption extends React.Component<PopupOptionProps> {
         break;
       case "highlight":
         this.handleDigest();
-        break;
-      case "translation":
-        this.handleTrans();
         break;
       case "copy":
         this.handleCopy();
@@ -227,21 +210,13 @@ class PopupOption extends React.Component<PopupOptionProps> {
       case "speech-start":
         this.handleReadFromHere();
         break;
-      case "assistant":
-        this.handleAssistant();
-        break;
       default:
         break;
     }
   };
 
   render() {
-    const popupOptionKeys = getEnabledPopupOptionKeys().filter((item) => {
-      return !(
-        item === "assistant" &&
-        ConfigService.getReaderConfig("isDisableAI") === "yes"
-      );
-    });
+    const popupOptionKeys = getEnabledPopupOptionKeys();
     return (
       <div className="menu-list">
         <Tooltip id="option-tooltip" style={{ zIndex: 25 }} />

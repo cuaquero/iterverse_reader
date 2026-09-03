@@ -23,11 +23,8 @@ export interface ReaderProps {
   handlePdfCropDialog: (isPdfCropOpen: boolean) => void;
   handleSpeechDialog: (isSpeechOpen: boolean) => void;
   handleAnnotationDialog: (isAnnotationOpen: boolean) => void;
-  handleMenuMode: (menuMode: string) => void;
-  handleOriginalText: (originalText: string) => void;
   handleFetchBooks: () => void;
   handleBackgroundColor: (backgroundColor: string) => void;
-  handleOpenMenu: (isOpen: boolean) => void;
   handleFetchBookmarks: () => void;
   handleFetchPercentage: (currentBook: BookModel) => void;
   handleReadingBook: (book: BookModel) => void;

@@ -14,7 +14,6 @@ import {
   handleOriginalText,
   handleOriginalSentence,
   handleNoteKey,
-  handleQuoteText,
 } from "../../../store/actions";
 import { stateType } from "../../../store";
 import { withTranslation } from "react-i18next";
@@ -42,7 +41,6 @@ const actionCreator = {
   handleSpeechDialog,
   handleSpeechStartText,
   handleSpeechAutoStart,
-  handleQuoteText,
 };
 export default connect(
   mapStateToProps,

@@ -40,7 +40,6 @@ export interface SettingInfoState {
   isMinimizeToTray: boolean;
   isOpenInMain: boolean;
   isExportOriginalName: boolean;
-  isDisableAI: boolean;
   isUseOriginalName: boolean;
   isPrecacheBook: boolean;
   isUseBuiltIn: boolean;

@@ -23,7 +23,6 @@ export interface PopupOptionProps {
   handleFetchNotes: () => void;
   handleOriginalText: (originalText: string) => void;
   handleOriginalSentence: (originalSentence: string) => void;
-  handleQuoteText: (quoteText: string) => void;
   handleChangeDirection: (isChangeDirection: boolean) => void;
   t: (title: string) => string;
 }

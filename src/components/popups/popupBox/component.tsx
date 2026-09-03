@@ -1,11 +1,9 @@
 import React from "react";
 import "./popupMenu.css";
 import PopupNote from "../popupNote";
-import PopupTrans from "../popupTrans";
 import PopupDict from "../popupDict";
 import { PopupBoxProps, PopupBoxStates } from "./interface";
 import { getIframeDoc } from "../../../utils/reader/docUtil";
-import PopupAssist from "../popupAssist";
 import { isElectron } from "react-device-detect";
 import { ConfigService } from "../../../assets/lib/kookit-extra-browser.min";
 import { throttle } from "../../../utils/common";
@@ -14,7 +12,6 @@ const POPUP_SIZE_KEY = "popupBoxSize";
 const DEFAULT_WIDTH = 500;
 
 function getDefaultHeight(menuMode: string) {
-  if (menuMode === "assistant") return 400;
   if (menuMode === "note") return 360;
   return 320;
 }
@@ -137,8 +134,7 @@ class PopupBox extends React.Component<PopupBoxProps, PopupBoxStates> {
       <div
         style={{
           display:
-            this.state.isShowUrl &&
-            (this.props.menuMode === "dict" || this.props.menuMode === "trans")
+            this.state.isShowUrl && this.props.menuMode === "dict"
               ? "none"
               : "block",
         }}
@@ -159,12 +155,8 @@ class PopupBox extends React.Component<PopupBoxProps, PopupBoxStates> {
         >
           {this.props.menuMode === "note" ? (
             <PopupNote {...(PopupProps as any)} />
-          ) : this.props.menuMode === "trans" ? (
-            <PopupTrans {...(PopupProps as any)} />
           ) : this.props.menuMode === "dict" ? (
             <PopupDict {...(PopupProps as any)} />
-          ) : this.props.menuMode === "assistant" ? (
-            <PopupAssist {...(PopupProps as any)} />
           ) : null}
           <span
             className="icon-close popup-close"

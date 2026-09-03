@@ -1,6 +1,5 @@
 import {
   ConfigService,
-  KookitConfig,
   TokenService,
 } from "../../assets/lib/kookit-extra-browser.min";
 import BookModel from "../../models/Book";
@@ -12,14 +11,8 @@ import {
   getUserRequest,
   resetUserRequest,
 } from "../../utils/request/user";
-import {
-  officialDictList,
-  officialTranList,
-} from "../../constants/settingList";
 import toast from "react-hot-toast";
 import BookUtil from "../../utils/file/bookUtil";
-import i18n from "../../i18n";
-import { langToName } from "../../utils/common";
 import { resetReaderRequest } from "../../utils/request/reader";
 import { resetThirdpartyRequest } from "../../utils/request/thirdparty";
 import DictUtil from "../../utils/file/dictUtil";
@@ -276,25 +269,13 @@ export function handleFetchPlugins() {
   return async (dispatch: Dispatch) => {
     DatabaseService.getAllRecords("plugins").then(async (pluginList) => {
       try {
-        // Migrate legacy AI model entries from DB to ConfigService
-        const legacyAiPlugins = pluginList.filter(
-          (p: PluginModel) => p.type === "ai"
-        );
-        for (const p of legacyAiPlugins) {
-          const existing = ConfigService.getObjectConfig(
-            p.key,
-            "aiModelConfig",
-            null
-          );
-          if (!existing) {
-            ConfigService.setObjectConfig(
-              p.key,
-              { key: p.key, displayName: p.displayName, config: p.config },
-              "aiModelConfig"
-            );
-          }
-          await DatabaseService.deleteRecord(p.key, "plugins");
-        }
+        // AI-derived plugin entries (Custom/Official AI dictionary,
+        // translation, assistant, voice) used to be synthesized here from
+        // the AI service settings and from a Koodo-hosted "official AI"
+        // subscription. This deployment has neither an AI service tab nor a
+        // Koodo cloud backend, so those entries are no longer built - any
+        // leftover legacy "ai" type record in the local plugin store is
+        // just filtered out.
         pluginList = pluginList.filter((p: PluginModel) => p.type !== "ai");
 
         // Load local dictionary plugins from ConfigService
@@ -319,224 +300,7 @@ export function handleFetchPlugins() {
           }
         }
 
-        if (ConfigService.getReaderConfig("aiTranslateModel")) {
-          const modelKey = ConfigService.getReaderConfig("aiTranslateModel");
-          const entry = ConfigService.getObjectConfig(
-            modelKey,
-            "aiModelConfig",
-            null
-          );
-          if (entry && entry.key) {
-            let transPlugin = new PluginModel(
-              "custom-ai-trans-plugin",
-              "translation",
-              "Custom AI Translation",
-              "translation",
-              "1.0.0",
-              "",
-              entry.config || {},
-              officialTranList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(transPlugin);
-          }
-        }
-        if (ConfigService.getReaderConfig("aiDictModel")) {
-          const modelKey = ConfigService.getReaderConfig("aiDictModel");
-          const entry = ConfigService.getObjectConfig(
-            modelKey,
-            "aiModelConfig",
-            null
-          );
-          if (entry && entry.key) {
-            let dictPlugin = new PluginModel(
-              "custom-ai-dict-plugin",
-              "dictionary",
-              "Custom AI Dictionary",
-              "dict",
-              "1.0.0",
-              "",
-              entry.config || {},
-              officialDictList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(dictPlugin);
-          }
-        }
-        if (ConfigService.getReaderConfig("aiAssistanceModel")) {
-          const modelKey = ConfigService.getReaderConfig("aiAssistanceModel");
-          const entry = ConfigService.getObjectConfig(
-            modelKey,
-            "aiModelConfig",
-            null
-          );
-          if (entry && entry.key) {
-            let assistPlugin = new PluginModel(
-              "custom-ai-assistant-plugin",
-              "assistant",
-              "Custom AI Assistance",
-              "assistant",
-              "1.0.0",
-              "",
-              entry.config || {},
-              officialTranList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(assistPlugin);
-          }
-        }
-        TokenService.getToken("is_authed").then((value) => {
-          let isAuthed = value === "yes";
-          if (
-            isAuthed &&
-            ConfigService.getReaderConfig("isDisableAI") !== "yes"
-          ) {
-            let dictPlugin = new PluginModel(
-              "official-ai-dict-plugin",
-              "dictionary",
-              "Official AI Dictionary",
-              "dict",
-              "1.0.0",
-              "",
-              {},
-              officialDictList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(dictPlugin);
-            let transPlugin = new PluginModel(
-              "official-ai-trans-plugin",
-              "translation",
-              "Official AI Translation",
-              "translation",
-              "1.0.0",
-              "",
-              {},
-              officialTranList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(transPlugin);
-            let sumPlugin = new PluginModel(
-              "official-ai-assistant-plugin",
-              "assistant",
-              "Official AI Assistant",
-              "assistant",
-              "1.0.0",
-              "",
-              {},
-              officialTranList,
-              [],
-              "",
-              ""
-            );
-            pluginList.push(sumPlugin);
-            let sortedVoiceList = [
-              ...KookitConfig.OfficialVoiceList.map((item) => {
-                return {
-                  ...item,
-                  label:
-                    i18n.t("Official AI Voice") +
-                    " - " +
-                    item.displayName +
-                    " - " +
-                    item.language +
-                    " - " +
-                    (item.gender === "female"
-                      ? i18n.t("Female voice")
-                      : i18n.t("Male voice")),
-                };
-              }),
-              ...KookitConfig.AzureTTSVoiceList.map((item) => {
-                return {
-                  ...item,
-                  label:
-                    "Azure TTS" +
-                    " - " +
-                    item.displayName +
-                    " - " +
-                    langToName(item.locale) +
-                    " - " +
-                    (item.gender === "female"
-                      ? i18n.t("Female voice")
-                      : i18n.t("Male voice")),
-                };
-              }),
-            ];
-            let voicePlugin = new PluginModel(
-              "official-ai-voice-plugin",
-              "voice",
-              "Official AI Voice",
-              "speaker",
-              "1.0.0",
-              "",
-              {},
-              {},
-              sortedVoiceList.map((item: any) => {
-                return {
-                  ...item, // 创建新对象
-                  plugin: "official-ai-voice-plugin",
-                  config: {},
-                  displayName: item.label,
-                };
-              }),
-              "",
-              ""
-            );
-            pluginList.push(voicePlugin);
-            dispatch(handlePlugins(pluginList));
-          } else if (isAuthed) {
-            let sortedVoiceList = [
-              ...KookitConfig.AzureTTSVoiceList.map((item) => {
-                return {
-                  ...item,
-                  label:
-                    "Azure TTS" +
-                    " - " +
-                    item.displayName +
-                    " - " +
-                    langToName(item.locale) +
-                    " - " +
-                    (item.gender === "female"
-                      ? i18n.t("Female voice")
-                      : i18n.t("Male voice")),
-                };
-              }),
-            ];
-            let voicePlugin = new PluginModel(
-              "official-ai-voice-plugin",
-              "voice",
-              "Official AI Voice",
-              "speaker",
-              "1.0.0",
-              "",
-              {},
-              {},
-              sortedVoiceList.map((item: any) => {
-                return {
-                  ...item, // 创建新对象
-                  plugin: "official-ai-voice-plugin",
-                  config: {},
-                  displayName: item.label,
-                };
-              }),
-              "",
-              ""
-            );
-            pluginList.push(voicePlugin);
-            dispatch(handlePlugins(pluginList));
-          } else {
-            dispatch(handlePlugins(pluginList));
-          }
-        });
+        dispatch(handlePlugins(pluginList));
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);

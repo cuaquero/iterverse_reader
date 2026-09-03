@@ -215,11 +215,6 @@ class PopupMenu extends React.Component<PopupMenuProps, PopupMenuStates> {
     if (!text) return;
 
     switch (action) {
-      case "translation":
-        this.props.handleOriginalText(text);
-        this.props.handleMenuMode("trans");
-        this.props.handleOpenMenu(true);
-        break;
       case "dict":
         this.props.handleOriginalText(text);
         this.props.handleOriginalSentence(getSelectionSentence(format));

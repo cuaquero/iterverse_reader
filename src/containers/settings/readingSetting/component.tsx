@@ -26,7 +26,6 @@ class ReadingSetting extends React.Component<
         ConfigService.getReaderConfig("isLemmatizeWord") === "yes",
       isOpenBook: ConfigService.getReaderConfig("isOpenBook") === "yes",
       isDisablePopup: ConfigService.getReaderConfig("isDisablePopup") === "yes",
-      isManualScroll: ConfigService.getReaderConfig("isManualScroll") === "yes",
       isDisableAutoScroll:
         ConfigService.getReaderConfig("isDisableAutoScroll") === "yes",
       isDisableTrashBin:

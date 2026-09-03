@@ -43,7 +43,6 @@ class GeneralSetting extends React.Component<
       isMinimizeToTray:
         ConfigService.getReaderConfig("isMinimizeToTray") === "yes",
       isOpenInMain: ConfigService.getReaderConfig("isOpenInMain") === "yes",
-      isDisableAI: ConfigService.getReaderConfig("isDisableAI") === "yes",
       isUseOriginalName:
         ConfigService.getReaderConfig("isUseOriginalName") === "yes",
       isExportOriginalName:

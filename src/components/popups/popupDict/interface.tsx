@@ -4,7 +4,6 @@ export interface PopupDictProps {
   originalText: string;
   originalSentence: string;
   plugins: PluginModel[];
-  isAuthed: boolean;
   currentBook: BookModel;
   handleOpenMenu: (isOpenMenu: boolean) => void;
   handleMenuMode: (menu: string) => void;
@@ -22,6 +21,4 @@ export interface PopupDictState {
   dictSource: string;
   isAddNew: boolean;
   isShowUrl: boolean;
-  aiAnswer: string;
-  isAiWaiting: boolean;
 }

@@ -623,8 +623,6 @@ class Viewer extends React.Component<ViewerProps, ViewerState> {
         {this.props.isOpenMenu &&
         this.props.htmlBook &&
         (this.props.menuMode === "dict" ||
-          this.props.menuMode === "trans" ||
-          this.props.menuMode === "assistant" ||
           this.props.menuMode === "note") ? (
           <PopupBox
             {...({
