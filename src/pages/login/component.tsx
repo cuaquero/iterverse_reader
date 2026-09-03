@@ -182,38 +182,12 @@ class Login extends React.Component<LoginProps, LoginState> {
               </div>
               <div className="login-option-box">
                 <div>
-                  <div className="login-region-container">
-                    <div className="login-region-title">
-                      {this.props.t("Server region")}
-                    </div>
-                    <div>
-                      <span
-                        onClick={() => {
-                          this.handleServerRegionChange("global");
-                        }}
-                        style={
-                          this.state.serverRegion === "global"
-                            ? { textDecoration: "underline" }
-                            : {}
-                        }
-                      >
-                        {this.props.t("Global")}
-                      </span>
-                      <span>{" | "}</span>
-                      <span
-                        onClick={() => {
-                          this.handleServerRegionChange("china");
-                        }}
-                        style={
-                          this.state.serverRegion === "china"
-                            ? { textDecoration: "underline" }
-                            : {}
-                        }
-                      >
-                        {this.props.t("China")}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Server region (Global/China) selects between Koodo's
+                      own hosted backend regions - meaningless once this app
+                      talks to its own Cloudflare backend instead, and BTECH
+                      has no China deployment for it to matter to. Hidden,
+                      not deleted, in case the toggle needs to come back for
+                      some other reason later. */}
                   {/* Iterverse platform auth (Cloudflare Access, OTP) - see
                       platform-auth/README.md in the ad_labs repo. The only
                       login path actually wired to this app's own backend
@@ -238,57 +212,71 @@ class Login extends React.Component<LoginProps, LoginState> {
                       {this.props.t("Continue with your BTECH email")}
                     </div>
                   </a>
-                  {loginList.map((item) => {
-                    return (
+                  {/* Google/Microsoft/email-code login (loginList) and the
+                      manual-credentials entry point all still resolve
+                      against Koodo's own real backend (see CLAUDE.md's
+                      "client isn't wired up to this backend yet") - showing
+                      them would just be broken buttons pointing at another
+                      company's login system. Hidden, not deleted: this
+                      comes back once Google/Microsoft OAuth apps are
+                      registered and BTECH provisions student accounts for
+                      Microsoft to work against (see LTI.md's status notes
+                      on the same blocker). */}
+                  {false && (
+                    <>
+                      {loginList.map((item) => {
+                        return (
+                          <div
+                            className="login-option-container"
+                            key={item.value}
+                            style={{}}
+                            onClick={() => {
+                              if (item.value === "email") {
+                                this.setState({ currentStep: 5 });
+                                return;
+                              }
+                              let url = LoginHelper.getAuthUrl(
+                                item.value,
+                                isElectron ? "desktop" : "browser",
+                                getServerRegion() === "china" &&
+                                  item.value === "microsoft"
+                                  ? KookitConfig.ThirdpartyConfig.cnCallbackUrl
+                                  : KookitConfig.ThirdpartyConfig.callbackUrl
+                              );
+                              if (url) {
+                                if (isElectron) {
+                                  openInBrowser(url);
+                                } else {
+                                  window.location.replace(url);
+                                }
+                              }
+                            }}
+                          >
+                            <div className="login-option-icon">
+                              <span
+                                className={item.icon + " login-option-icon"}
+                                style={{ fontSize: item.fontsize }}
+                              ></span>
+                            </div>
+                            <div className="login-option-title">
+                              <Trans i18nKey="Continue with" label={item.label}>
+                                Continue with {{ label: this.props.t(item.label) }}
+                              </Trans>
+                            </div>
+                          </div>
+                        );
+                      })}
                       <div
-                        className="login-option-container"
-                        key={item.value}
-                        style={{}}
+                        className="login-manual-token"
                         onClick={() => {
-                          if (item.value === "email") {
-                            this.setState({ currentStep: 5 });
-                            return;
-                          }
-                          let url = LoginHelper.getAuthUrl(
-                            item.value,
-                            isElectron ? "desktop" : "browser",
-                            getServerRegion() === "china" &&
-                              item.value === "microsoft"
-                              ? KookitConfig.ThirdpartyConfig.cnCallbackUrl
-                              : KookitConfig.ThirdpartyConfig.callbackUrl
-                          );
-                          if (url) {
-                            if (isElectron) {
-                              openInBrowser(url);
-                            } else {
-                              window.location.replace(url);
-                            }
-                          }
+                          this.props.handleSetting(true);
+                          this.props.handleSettingMode("account");
                         }}
                       >
-                        <div className="login-option-icon">
-                          <span
-                            className={item.icon + " login-option-icon"}
-                            style={{ fontSize: item.fontsize }}
-                          ></span>
-                        </div>
-                        <div className="login-option-title">
-                          <Trans i18nKey="Continue with" label={item.label}>
-                            Continue with {{ label: this.props.t(item.label) }}
-                          </Trans>
-                        </div>
+                        {this.props.t("Manually enter login credentials")}
                       </div>
-                    );
-                  })}
-                  <div
-                    className="login-manual-token"
-                    onClick={() => {
-                      this.props.handleSetting(true);
-                      this.props.handleSettingMode("account");
-                    }}
-                  >
-                    {this.props.t("Manually enter login credentials")}
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
