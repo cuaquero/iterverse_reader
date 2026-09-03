@@ -203,7 +203,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                       /api/auth/access. */}
                   <a className="btech-signin-button" href="/api/auth/access">
                     <span className="icon-email"></span>
-                    {this.props.t("Continue with your BTECH email")}
+                    {this.props.t("Continue with your email")}
                   </a>
                   {/* Google/Microsoft/email-code login (loginList) and the
                       manual-credentials entry point all still resolve
