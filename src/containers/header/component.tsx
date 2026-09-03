@@ -36,7 +36,6 @@ import {
 } from "../../utils/common";
 import { driveList } from "../../constants/driveList";
 import SyncService from "../../utils/storage/syncService";
-import { LocalFileManager } from "../../utils/file/localFile";
 declare var window: any;
 
 class Header extends React.Component<HeaderProps, HeaderState> {
@@ -140,23 +139,16 @@ class Header extends React.Component<HeaderProps, HeaderState> {
       });
     } else {
       await upgradeConfig();
-      const status = await LocalFileManager.getPermissionStatus();
-      if (
-        !ConfigService.getItem("isUseLocal") &&
-        LocalFileManager.isSupported()
-      ) {
-        this.props.handleLocalFileDialog(true);
-      } else if (
-        ConfigService.getItem("isUseLocal") === "yes" &&
-        !status.directoryName
-      ) {
-        this.props.handleLocalFileDialog(true);
-      } else if (
-        ConfigService.getItem("isUseLocal") === "yes" &&
-        (status.needsReauthorization || !status.hasAccess)
-      ) {
-        this.props.handleLocalFileDialog(true);
-      }
+      // Upstream's "grant a local folder or keep using browser storage"
+      // onboarding nudge - disabled here rather than just hiding the
+      // dialog's render, since the prompt itself no longer makes sense for
+      // this deployment: personal imports and catalog downloads both
+      // intentionally use browser storage (localforage) by design (see
+      // this repo's own git history / ad_labs's unified-access-vision.md
+      // for why), and the "local folder" alternative it offers is a
+      // single-device feature that doesn't interact with the real account
+      // sync this app now has. It was also popping up over the new
+      // catalog view on every first visit, blocking it.
     }
     this.resizeHandler = throttle(() => {
       this.setState({ width: document.body.clientWidth });

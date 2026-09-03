@@ -1,9 +1,14 @@
+/* bookList's own content starts at top: 80px (see booklist.css) with no
+   separate title row of its own - the top 0-80px band is the shared
+   toolbar (search box, sort/settings/refresh icons). This header sits
+   just below that band instead of inside it, which is what was
+   overlapping the search box before. */
 .catalog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: absolute;
-  top: 40px;
+  top: 90px;
   left: 220px;
   width: calc(100% - 220px);
   box-sizing: border-box;
@@ -22,10 +27,10 @@
 
 .catalog-container-parent {
   position: absolute;
-  top: 80px;
+  top: 140px;
   left: 220px;
   width: calc(100% - 220px);
-  height: calc(100% - 125px);
+  height: calc(100% - 185px);
   overflow: auto;
   box-sizing: border-box;
   padding: 0 30px 30px 30px;
