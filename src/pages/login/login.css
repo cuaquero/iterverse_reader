@@ -3,7 +3,7 @@
   height: 100%;
   display: flex;
   justify-content: space-between;
-  color: rgba(75, 75, 75, 1);
+  color: #ffffff;
 }
 .login-cover-container {
   width: 60%;
@@ -51,8 +51,8 @@
 }
 .login-close-icon {
   font-size: 25px;
-  opacity: 0.5;
-  color: rgba(75, 75, 75, 1);
+  opacity: 0.6;
+  color: #ffffff;
 }
 .login-content-illustration {
   width: 100px;

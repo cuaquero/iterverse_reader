@@ -150,13 +150,13 @@ class Login extends React.Component<LoginProps, LoginState> {
           <div
             className="login-container"
             style={{
-              backgroundColor: "#dcd7c7",
+              backgroundColor: "var(--btech-gray)",
             }}
           >
             <div
               className="login-cover-container"
               style={{
-                backgroundColor: "#e4e1d8",
+                backgroundColor: "var(--btech-gray-dark)",
               }}
             >
               <div className="login-logo">
@@ -179,7 +179,7 @@ class Login extends React.Component<LoginProps, LoginState> {
                 style={{
                   marginTop: "50px",
                   marginBottom: "30px",
-                  color: "var(--btech-gray)",
+                  color: "#ffffff",
                 }}
               >
                 {this.props.t("Sign in to Iterverse Reader")}

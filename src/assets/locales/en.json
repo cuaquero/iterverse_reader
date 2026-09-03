@@ -1277,5 +1277,10 @@
   "Some S3 services are not compatible with browser environments. If you encounter connection issues, please refer to the service provider's official documentation for instructions on enabling CORS. Also due to browser's security restrictions, the S3 service must be accessed via HTTPS protocol when you're visiting Iterverse Reader via HTTPS protocol.": "Some S3 services are not compatible with browser environments. If you encounter connection issues, please refer to the service provider's official documentation for instructions on enabling CORS. Also due to browser's security restrictions, the S3 service must be accessed via HTTPS protocol when you're visiting Iterverse Reader via HTTPS protocol.",
   "Sign in to Iterverse Reader": "Sign in to Iterverse Reader",
   "You're all set": "You're all set",
-  "Continue with your BTECH email": "Continue with your BTECH email"
+  "Continue with your BTECH email": "Continue with your BTECH email",
+  "Ask an admin to add books to the catalog": "Ask an admin to add books to the catalog",
+  "Book catalog": "Book catalog",
+  "Could not open": "Could not open",
+  "Failed to load the catalog": "Failed to load the catalog",
+  "Retry": "Retry"
 }
