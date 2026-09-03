@@ -29,13 +29,29 @@ class Redirect extends React.Component<RedirectProps, RedirectState> {
   handleFinish = () => {
     this.props.handleLoadingDialog(false);
   };
+  // Upstream Koodo always sent "/" straight to "/manager/home" with no auth
+  // check at all - login was purely optional, adding cloud sync on top of a
+  // fully-functional signed-out reader. That's not what this deployment
+  // wants: signing in via Iterverse platform auth should be the actual
+  // front door, not a screen nobody ever sees because nothing routes there.
+  // getSessionUser (functions/lib/session.ts) already backs /api/auth/me
+  // for exactly this kind of check.
+  redirectByAuthState = async () => {
+    try {
+      const response = await fetch("/api/auth/me");
+      this.props.history.push(response.ok ? "/manager/home" : "/login");
+    } catch {
+      this.props.history.push("/login");
+    }
+  };
   showMessage = (message: string) => {
     toast(this.props.t(message));
   };
   componentDidMount() {
     let url = document.location.href;
     if (document.location.hash === "#/" && url.indexOf("code") === -1) {
-      this.props.history.push("/manager/home");
+      this.redirectByAuthState();
+      return;
     }
     if (url.indexOf("error") > -1) {
       this.setState({ isError: true });
