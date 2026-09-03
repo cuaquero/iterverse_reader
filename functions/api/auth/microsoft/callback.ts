@@ -70,7 +70,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   return new Response(null, {
     status: 302,
     headers: {
-      Location: `${base}/manager/home`,
+      Location: `${base}/#/manager/home`,
       "Set-Cookie": setCookieHeader(SESSION_COOKIE, sessionId, {
         maxAge: SESSION_TTL_SECONDS,
       }),

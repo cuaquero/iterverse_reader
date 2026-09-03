@@ -59,12 +59,12 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     scope: "openid",
     "https://purl.imsglobal.org/spec/lti-tool-configuration": {
       domain: new URL(base).hostname,
-      target_link_uri: `${base}/manager/home`,
+      target_link_uri: `${base}/#/manager/home`,
       claims: ["iss", "sub", "email", "name"],
       messages: [
         {
           type: "LtiResourceLinkRequest",
-          target_link_uri: `${base}/manager/home`,
+          target_link_uri: `${base}/#/manager/home`,
           label: "Reader",
           // Canvas-specific: which placements to enable this tool for. Without
           // this, Canvas registers the tool but gives admins/instructors
