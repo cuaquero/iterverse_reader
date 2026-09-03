@@ -176,11 +176,15 @@ class Login extends React.Component<LoginProps, LoginState> {
             <div className="login-content-container">
               <div
                 className="login-title"
-                style={{ marginTop: "50px", marginBottom: "30px" }}
+                style={{
+                  marginTop: "50px",
+                  marginBottom: "30px",
+                  color: "var(--btech-gray)",
+                }}
               >
                 {this.props.t("Sign in to Iterverse Reader")}
               </div>
-              <div className="login-option-box">
+              <div className="btech-signin-box">
                 <div>
                   {/* Server region (Global/China) selects between Koodo's
                       own hosted backend regions - meaningless once this app
@@ -197,20 +201,9 @@ class Login extends React.Component<LoginProps, LoginState> {
                       navigation for Access to intercept and run its OTP
                       challenge before the request ever reaches
                       /api/auth/access. */}
-                  <a
-                    className="login-option-container"
-                    href="/api/auth/access"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <div className="login-option-icon">
-                      <span
-                        className="icon-email login-option-icon"
-                        style={{ fontSize: "20px" }}
-                      ></span>
-                    </div>
-                    <div className="login-option-title">
-                      {this.props.t("Continue with your BTECH email")}
-                    </div>
+                  <a className="btech-signin-button" href="/api/auth/access">
+                    <span className="icon-email"></span>
+                    {this.props.t("Continue with your BTECH email")}
                   </a>
                   {/* Google/Microsoft/email-code login (loginList) and the
                       manual-credentials entry point all still resolve

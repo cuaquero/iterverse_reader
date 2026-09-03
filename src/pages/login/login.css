@@ -250,3 +250,43 @@
   right: 10px;
   opacity: 0.8;
 }
+
+/* Iterverse platform auth sign-in, replacing .login-option-container for
+   this one case - that class was built for a tight row of icon-only OAuth
+   buttons (Google/GitHub/etc, all short single-word labels), and its
+   absolutely-positioned, full-width-centered title text only worked
+   because those labels were short enough not to reach the icon on the
+   left. A longer label ("Continue with your BTECH email") collided with
+   it instead of just centering past it. */
+.btech-signin-box {
+  width: 100%;
+  height: calc(100% - 250px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.btech-signin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 300px;
+  padding: 14px 24px;
+  background: var(--btech-red);
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(35, 35, 38, 0.15);
+  transition: background-color 0.15s ease;
+}
+.btech-signin-button:hover {
+  background: var(--btech-red-dark);
+}
+.btech-signin-button .icon-email {
+  font-size: 18px;
+  flex-shrink: 0;
+}
