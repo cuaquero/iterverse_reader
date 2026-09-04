@@ -8,6 +8,7 @@ import {
   verifyLtiLaunch,
 } from "../../lib/lti";
 import { upsertUser } from "../../lib/users";
+import { checkRosterEntitlement } from "../../lib/roster";
 
 // Canvas form-posts the id_token here after its own auth endpoint completes.
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
@@ -55,6 +56,14 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       "Launch failed: unexpected deployment for this platform registration.",
       { status: 403 }
     );
+  }
+
+  // Same roster check the Access OTP path requires - a @btech.edu account
+  // alone isn't enough, it also needs an active course enrollment. See
+  // ad_labs/docs/unified-identity-v2-draft.md's Reader resolution.
+  const entitled = await checkRosterEntitlement(ctx.env, claims.email);
+  if (!entitled) {
+    return new Response(null, { status: 302, headers: { Location: `${base}/#/no-access` } });
   }
 
   // Every LTI launch lands as 'student' regardless of the Canvas role in the

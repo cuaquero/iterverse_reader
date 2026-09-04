@@ -25,23 +25,7 @@
 import { verifyAccessJwt } from "../../lib/access";
 import { appBaseUrl, createSession, setCookieHeader, SESSION_COOKIE, SESSION_TTL_SECONDS } from "../../lib/session";
 import { upsertUser } from "../../lib/users";
-
-// checkRosterEntitlement's own header comment explains why this call sits
-// here rather than in a shared _middleware.ts - it needs the verified
-// email, which only exists after verifyAccessJwt succeeds.
-async function checkRosterEntitlement(env: Env, email: string): Promise<boolean> {
-  const response = await fetch(`${env.ROSTER_API_URL}/api/entitlement/check`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.ROSTER_SERVICE_KEY}`,
-    },
-    body: JSON.stringify({ email, product: "reader" }),
-  });
-  if (!response.ok) return false;
-  const data = await response.json<{ entitled?: boolean }>().catch(() => ({ entitled: false }));
-  return data.entitled === true;
-}
+import { checkRosterEntitlement } from "../../lib/roster";
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const base = appBaseUrl(ctx.request, ctx.env);

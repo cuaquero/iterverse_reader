@@ -1,6 +1,7 @@
 import { appBaseUrl, createSession, setCookieHeader, SESSION_COOKIE, SESSION_TTL_SECONDS } from "../../../lib/session";
 import { decodeJwtPayload, isAllowedEmail, verifyOAuthState } from "../../../lib/oauth";
 import { upsertUser } from "../../../lib/users";
+import { checkRosterEntitlement } from "../../../lib/roster";
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
@@ -48,6 +49,14 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   }
   if (claims.email_verified === false) {
     return new Response("Login failed: Google reports this email address is not verified.", { status: 403 });
+  }
+
+  // Same roster check the Access OTP path requires - a @btech.edu account
+  // alone isn't enough, it also needs an active course enrollment. See
+  // ad_labs/docs/unified-identity-v2-draft.md's Reader resolution.
+  const entitled = await checkRosterEntitlement(ctx.env, claims.email);
+  if (!entitled) {
+    return new Response(null, { status: 302, headers: { Location: `${base}/#/no-access` } });
   }
 
   const user = await upsertUser(ctx.env.DB, {
