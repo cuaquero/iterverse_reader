@@ -1,5 +1,16 @@
 import { appBaseUrl } from "../../lib/session";
 
+// Plain !== short-circuits on the first mismatched byte, a timing
+// side-channel over the network - low practical risk for a one-time-use
+// secret at low request volume, but a constant-time compare removes it
+// for free.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 // LTI 1.3 Dynamic Registration (https://www.imsglobal.org/spec/lti-dr/v1p0/).
 // A Canvas admin opens this URL from Developer Keys > LTI Registration;
 // Canvas appends `openid_configuration` (its own OIDC discovery document) and
@@ -17,10 +28,8 @@ import { appBaseUrl } from "../../lib/session";
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
 
-  if (
-    !ctx.env.LTI_REGISTRATION_SECRET ||
-    url.searchParams.get("key") !== ctx.env.LTI_REGISTRATION_SECRET
-  ) {
+  const key = url.searchParams.get("key");
+  if (!ctx.env.LTI_REGISTRATION_SECRET || !key || !timingSafeEqual(key, ctx.env.LTI_REGISTRATION_SECRET)) {
     return new Response("Not found.", { status: 404 });
   }
 
