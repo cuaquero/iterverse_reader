@@ -137,12 +137,17 @@ class SettingDialog extends React.Component<
                 elsewhere. */}
             {this.props.role === "admin" &&
               this.renderSidebarItem("sync", "icon-sync", "Sync and backup", "")}
-            {this.renderSidebarItem(
-              "more",
-              "icon-more",
-              "More settings",
-              "13px"
-            )}
+            {/* "Enable software protection" (require auth on every launch) -
+                a device-lock preference that doesn't apply to a shared
+                admin-curated catalog reading app; admin-only along with the
+                rest of the tabs below. */}
+            {this.props.role === "admin" &&
+              this.renderSidebarItem(
+                "more",
+                "icon-more",
+                "More settings",
+                "13px"
+              )}
             {this.renderSidebarItem("account", "icon-user", "Account", "18px")}
             {this.renderSidebarItem("about", "icon-detail", "About", "18px")}
           </div>
@@ -163,18 +168,24 @@ class SettingDialog extends React.Component<
               "Font management",
               "18px"
             )}
-            {this.renderSidebarItem(
-              "chapter",
-              "icon-convert-text",
-              "TXT parser",
-              "19px"
-            )}
-            {this.renderSidebarItem(
-              "text",
-              "icon-edit-line",
-              "Text rules",
-              "18px"
-            )}
+            {/* TXT chapter-splitting parsers and global text find/replace
+                rules are power-user configuration with no real use for a
+                student who only reads an admin-curated catalog - admin-only,
+                same reasoning as "More settings" above. */}
+            {this.props.role === "admin" &&
+              this.renderSidebarItem(
+                "chapter",
+                "icon-convert-text",
+                "TXT parser",
+                "19px"
+              )}
+            {this.props.role === "admin" &&
+              this.renderSidebarItem(
+                "text",
+                "icon-edit-line",
+                "Text rules",
+                "18px"
+              )}
             {isElectron &&
               this.renderSidebarItem(
                 "dict",
@@ -222,13 +233,13 @@ class SettingDialog extends React.Component<
               <BackgroundSetting />
             ) : this.props.settingMode === "font" ? (
               <FontSetting />
-            ) : this.props.settingMode === "chapter" ? (
+            ) : this.props.settingMode === "chapter" && this.props.role === "admin" ? (
               <ChapterSetting />
-            ) : this.props.settingMode === "text" ? (
+            ) : this.props.settingMode === "text" && this.props.role === "admin" ? (
               <TextSetting />
             ) : this.props.settingMode === "dict" ? (
               <DictSetting />
-            ) : this.props.settingMode === "more" ? (
+            ) : this.props.settingMode === "more" && this.props.role === "admin" ? (
               <MoreSetting />
             ) : (
               <GeneralSetting />
