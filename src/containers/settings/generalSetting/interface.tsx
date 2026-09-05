@@ -22,6 +22,7 @@ export interface SettingInfoProps extends RouteComponentProps<any> {
   defaultSyncOption: string;
   isAuthed: boolean;
   settingDrive: string;
+  role: "student" | "admin" | null;
 }
 export interface SettingInfoState {
   isTouch: boolean;

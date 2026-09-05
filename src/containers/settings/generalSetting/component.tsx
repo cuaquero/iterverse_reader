@@ -180,9 +180,19 @@ class GeneralSetting extends React.Component<
     toast.success(this.props.t("Reset successful"));
   };
   render() {
+    // Students never see a trash bin to disable (deleteDialog/component.tsx
+    // forces permanent deletion for them regardless of this setting, and
+    // the Trash nav item itself is hidden) - showing the toggle would just
+    // suggest a choice that isn't actually respected.
+    const visibleGeneralSettingList =
+      this.props.role === "admin"
+        ? generalSettingList
+        : generalSettingList.filter(
+            (item) => item.propName !== "isDisableTrashBin"
+          );
     return (
       <>
-        {this.renderSwitchOption(generalSettingList)}
+        {this.renderSwitchOption(visibleGeneralSettingList)}
 
         <div className="setting-dialog-new-title">
           <Trans>Reset main window's position</Trans>

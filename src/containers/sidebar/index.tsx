@@ -17,6 +17,7 @@ import { withRouter } from "react-router-dom";
 const mapStateToProps = (state: stateType) => {
   return {
     mode: state.sidebar.mode,
+    role: state.manager.role,
     isCollapsed: state.sidebar.isCollapsed,
     shelfTitle: state.sidebar.shelfTitle,
     isAuthed: state.manager.isAuthed,

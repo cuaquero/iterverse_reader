@@ -26,6 +26,7 @@ const mapStateToProps = (state: stateType) => {
     settingDrive: state.manager.settingDrive,
     defaultSyncOption: state.backupPage.defaultSyncOption,
     loginOptionList: state.backupPage.loginOptionList,
+    role: state.manager.role,
   };
 };
 const actionCreator = {

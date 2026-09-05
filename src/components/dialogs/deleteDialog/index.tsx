@@ -26,6 +26,7 @@ const mapStateToProps = (state: stateType) => {
 
     deletedBooks: state.manager.deletedBooks,
     mode: state.sidebar.mode,
+    role: state.manager.role,
     shelfTitle: state.sidebar.shelfTitle,
   };
 };

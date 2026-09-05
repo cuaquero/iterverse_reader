@@ -189,7 +189,16 @@ class Sidebar extends React.Component<SidebarProps, SidebarState> {
     mode === "favorite" || mode === "trash";
   render() {
     const renderSideMenu = () => {
-      return sideMenu.map((item) => {
+      // Trash (mode "trash") is admin-only: it's where a personal book
+      // that would otherwise be soft-deleted goes to be recovered/purged,
+      // but students never soft-delete in the first place (see
+      // deleteDialog/component.tsx forcing isDisableTrashBin on for them) -
+      // there's nothing for a student's Trash view to ever hold.
+      const visibleSideMenu =
+        this.props.role === "admin"
+          ? sideMenu
+          : sideMenu.filter((item) => item.mode !== "trash");
+      return visibleSideMenu.map((item) => {
         const isDropTarget = this.isBookDropTarget(item.mode);
         return (
           <li

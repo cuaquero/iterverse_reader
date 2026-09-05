@@ -2,6 +2,7 @@ import { RouteComponentProps } from "react-router";
 
 export interface SidebarProps extends RouteComponentProps<any> {
   mode: string;
+  role: "student" | "admin" | null;
   isCollapsed: boolean;
   shelfTitle: string;
   isAuthed: boolean;

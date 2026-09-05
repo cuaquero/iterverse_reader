@@ -19,7 +19,14 @@ class DeleteDialog extends React.Component<
     this.state = {
       isDeleteShelfBook:
         ConfigService.getReaderConfig("isDeleteShelfBook") === "yes",
+      // Students have no Trash view to recover/purge from (hidden in
+      // containers/sidebar/component.tsx) - forcing this on for them makes
+      // "Delete" behave the only sensible way given that: permanent,
+      // immediate, no soft-delete step. Admins keep their own stored
+      // preference. See generalSetting/component.tsx for why the toggle
+      // itself is hidden from students rather than just defaulted.
       isDisableTrashBin:
+        this.props.role !== "admin" ||
         ConfigService.getReaderConfig("isDisableTrashBin") === "yes",
     };
   }
