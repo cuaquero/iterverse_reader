@@ -670,48 +670,57 @@ class Header extends React.Component<HeaderProps, HeaderState> {
               ></span>
             </span>
           </div>
-          <div
-            className="setting-icon-container"
-            onClick={async () => {
-              if (this.props.isAuthed) {
-                if (!ConfigService.getItem("defaultSyncOption")) {
+          {/* Entirely about the defaultSyncOption cloud-drive/data-source
+              mechanism configured in Settings -> Sync and backup - which is
+              now admin-only (see settingDialog/component.tsx and its own
+              comment on why). For a student this button was already a dead
+              end (no way to configure a data source), so hide it rather
+              than leave a header icon that just toasts an error pointing at
+              a settings pane they can no longer reach. */}
+          {this.props.role === "admin" && (
+            <div
+              className="setting-icon-container"
+              onClick={async () => {
+                if (this.props.isAuthed) {
+                  if (!ConfigService.getItem("defaultSyncOption")) {
+                    toast(
+                      this.props.t(
+                        "Please add data source in the setting-Sync and backup first"
+                      )
+                    );
+                    this.props.handleSetting(true);
+                    this.props.handleSettingMode("sync");
+                    return;
+                  }
+                  this.setState({ isSync: true });
+                  let userInfo = await this.props.handleFetchUserInfo();
+                  await this.handleCloudSync(userInfo);
+                } else {
                   toast(
-                    this.props.t(
-                      "Please add data source in the setting-Sync and backup first"
-                    )
+                    this.props.t("Please upgrade to Pro to use this feature")
                   );
                   this.props.handleSetting(true);
-                  this.props.handleSettingMode("sync");
-                  return;
+                  this.props.handleSettingMode("account");
+                  this.setState({ isSync: false });
                 }
-                this.setState({ isSync: true });
-                let userInfo = await this.props.handleFetchUserInfo();
-                await this.handleCloudSync(userInfo);
-              } else {
-                toast(
-                  this.props.t("Please upgrade to Pro to use this feature")
-                );
-                this.props.handleSetting(true);
-                this.props.handleSettingMode("account");
-                this.setState({ isSync: false });
-              }
-            }}
-            style={{ marginTop: "2px" }}
-          >
-            <span
-              data-tooltip-id="my-tooltip"
-              data-tooltip-content={this.props.t("Sync")}
-              data-tooltip-place="left"
+              }}
+              style={{ marginTop: "2px" }}
             >
               <span
-                className={
-                  "icon-sync setting-icon" +
-                  (this.state.isSync ? " icon-rotate" : "")
-                }
-                style={{ fontSize: "25px" }}
-              ></span>
-            </span>
-          </div>
+                data-tooltip-id="my-tooltip"
+                data-tooltip-content={this.props.t("Sync")}
+                data-tooltip-place="left"
+              >
+                <span
+                  className={
+                    "icon-sync setting-icon" +
+                    (this.state.isSync ? " icon-rotate" : "")
+                  }
+                  style={{ fontSize: "25px" }}
+                ></span>
+              </span>
+            </div>
+          )}
         </div>
 
         {KookitConfig.CloudMode !== "production" ? (
