@@ -21,6 +21,7 @@ const mapStateToProps = (state: stateType) => {
     mode: state.sidebar.mode,
     shelfTitle: state.sidebar.shelfTitle,
     isAuthed: state.manager.isAuthed,
+    role: state.manager.role,
   };
 };
 const actionCreator = {

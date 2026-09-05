@@ -729,17 +729,20 @@ class Header extends React.Component<HeaderProps, HeaderState> {
           </div>
         ) : null}
 
-        {/* Personal import is an admin-only capability here: students read
-            from the shared catalog (see src/pages/catalog) and can't add
-            their own files, so the drop target/import button shouldn't
-            even be reachable for them. */}
-        {this.props.role === "admin" && (
-          <ImportLocal
-            {...({
-              handleDrag: this.props.handleDrag,
-            } as any)}
-          />
-        )}
+        {/* Always mounted, regardless of role - ImportLocal itself hides its
+            visible drop target/import button for non-admins (personal
+            import is an admin-only capability; students read from the
+            shared catalog instead, see src/pages/catalog), but it must stay
+            mounted for every signed-in user because its componentDidMount
+            registers the actual import/parse pipeline that catalog's
+            "download then open" flow depends on. Gating the mount here by
+            role again would silently break that for every student. */}
+        <ImportLocal
+          {...({
+            handleDrag: this.props.handleDrag,
+          } as any)}
+        />
+
         <UpdateInfo />
       </div>
     );

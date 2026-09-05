@@ -6,6 +6,7 @@ export interface ImportLocalProps extends RouteComponentProps<any> {
 
   isCollapsed: boolean;
   isAuthed: boolean;
+  role: "student" | "admin" | null;
   mode: string;
   shelfTitle: string;
   cloudSyncFunc: () => Promise<void>;

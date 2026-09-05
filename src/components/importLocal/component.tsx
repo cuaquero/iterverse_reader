@@ -680,6 +680,21 @@ class ImportLocal extends React.Component<ImportLocalProps, ImportLocalState> {
     }
   };
   render() {
+    // Personal import (the visible drag target/button below) is an
+    // admin-only capability - students read from the shared catalog
+    // instead (see src/pages/catalog). But this component's
+    // componentDidMount registers the actual import/parse pipeline
+    // (handleImportBookFunc) into Redux regardless of role, since
+    // src/pages/catalog/component.tsx's "download from catalog, then
+    // import/open" flow reuses that same registered function - it has no
+    // pipeline of its own. Returning null here only suppresses the visible
+    // UI for students; it doesn't stop this component from mounting or
+    // registering that function. Don't gate the mount itself by role again
+    // (e.g. back in containers/header/component.tsx) without moving that
+    // registration somewhere else first, or catalog opens silently break
+    // for every student on every book, the way they did before this fix.
+    if (this.props.role !== "admin") return null;
+
     return (
       <Dropzone
         onDrop={async (acceptedFiles) => {
