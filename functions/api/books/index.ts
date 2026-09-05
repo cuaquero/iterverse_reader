@@ -1,4 +1,5 @@
 import { requireAdmin, requireUser } from "../../lib/auth";
+import { fetchAndStoreCoverFromUrl, storeCoverFile } from "../../lib/r2";
 
 const SUPPORTED_FORMATS = new Set([
   "epub", "pdf", "mobi", "azw3", "azw", "txt", "fb2",
@@ -31,59 +32,6 @@ const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   mhtml: "text/plain",
   htm: "text/plain",
 };
-
-const COVER_CONTENT_TYPE_BY_EXT: Record<string, string> = {
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  webp: "image/webp",
-};
-
-const EXT_BY_COVER_CONTENT_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/gif": "gif",
-  "image/webp": "webp",
-};
-
-// Lets the admin bulk-upload flow attach a cover matched via
-// /api/admin/metadata-search (a Google Books/Open Library image URL)
-// without the browser having to fetch a third-party image itself, which
-// would hit CORS since those aren't our origin. Fetching server-side avoids
-// that entirely. The response's own Content-Type decides the stored
-// extension/type - never the URL's file extension or any client-declared
-// value - and only recognized image types are stored at all, same
-// don't-trust-client-input posture as the multipart `cover` field above.
-async function fetchAndStoreCoverFromUrl(
-  bucket: R2Bucket,
-  bookId: string,
-  coverUrl: string
-): Promise<string | null> {
-  let parsed: URL;
-  try {
-    parsed = new URL(coverUrl);
-  } catch {
-    return null;
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-
-  let response: Response;
-  try {
-    response = await fetch(parsed.toString());
-  } catch {
-    return null;
-  }
-  if (!response.ok || !response.body) return null;
-
-  const contentType = (response.headers.get("content-type") || "").split(";")[0].trim();
-  const ext = EXT_BY_COVER_CONTENT_TYPE[contentType];
-  if (!ext) return null;
-
-  const coverKey = `books/${bookId}/cover.${ext}`;
-  await bucket.put(coverKey, response.body, { httpMetadata: { contentType } });
-  return coverKey;
-}
 
 interface BookRow {
   id: string;
@@ -160,11 +108,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
 
   let coverKey: string | null = null;
   if (cover instanceof File && cover.size > 0) {
-    const coverExt = (cover.name.split(".").pop() || "jpg").toLowerCase();
-    coverKey = `books/${id}/cover.${coverExt}`;
-    await ctx.env.BOOK_FILES.put(coverKey, cover.stream(), {
-      httpMetadata: { contentType: COVER_CONTENT_TYPE_BY_EXT[coverExt] || "image/jpeg" },
-    });
+    coverKey = await storeCoverFile(ctx.env.BOOK_FILES, id, cover);
   } else if (coverUrl) {
     // From admin/bulkUpload's "Get metadata" match - a remote image URL, not
     // an uploaded file. See fetchAndStoreCoverFromUrl's own comment for why

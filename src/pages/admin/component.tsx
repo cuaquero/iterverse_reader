@@ -6,8 +6,9 @@ import { Trans } from "react-i18next";
 import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
 import { extractBookMetadata } from "../../utils/file/bookMetadataExtractor";
 import BulkUpload from "./bulkUpload";
+import EditBookRow from "./editBookRow";
 
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB"];
   let value = bytes / 1024;
@@ -19,7 +20,7 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-function formatDate(iso: string | null): string {
+export function formatDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso.replace(" ", "T") + "Z").toLocaleString();
 }
@@ -337,22 +338,14 @@ class Admin extends React.Component<AdminProps, AdminState> {
             </thead>
             <tbody>
               {books.map((book) => (
-                <tr key={book.id}>
-                  <td>{book.title}</td>
-                  <td>{book.author || "—"}</td>
-                  <td className="admin-format-cell">{book.format}</td>
-                  <td>{formatBytes(book.fileSize)}</td>
-                  <td>{formatDate(book.createdAt)}</td>
-                  <td>
-                    <button
-                      className="admin-danger-btn"
-                      disabled={deletingBookId === book.id}
-                      onClick={() => this.handleDeleteBook(book)}
-                    >
-                      {deletingBookId === book.id ? this.props.t("Removing...") : this.props.t("Remove")}
-                    </button>
-                  </td>
-                </tr>
+                <EditBookRow
+                  key={book.id}
+                  book={book}
+                  t={this.props.t}
+                  deletingBookId={deletingBookId}
+                  onSaved={this.loadBooks}
+                  onDeleteRequested={this.handleDeleteBook}
+                />
               ))}
               {books.length === 0 && (
                 <tr>

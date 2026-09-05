@@ -62,3 +62,73 @@ function parseRangeHeader(header: string): R2Range | undefined {
   if (endStr === "") return { offset };
   return { offset, length: parseInt(endStr, 10) - offset + 1 };
 }
+
+// Shared by both POST /api/books (new upload) and PATCH /api/books/:id
+// (editing an existing catalog entry's cover) - Content-Type is always
+// derived from a validated extension/response header, never trusted from
+// the uploader/URL, same don't-trust-client-input posture as the book file
+// itself (see CONTENT_TYPE_BY_EXT's own comment in api/books/index.ts).
+export const COVER_CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+};
+
+const EXT_BY_COVER_CONTENT_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
+
+export async function storeCoverFile(
+  bucket: R2Bucket,
+  bookId: string,
+  cover: File
+): Promise<string> {
+  const coverExt = (cover.name.split(".").pop() || "jpg").toLowerCase();
+  const coverKey = `books/${bookId}/cover.${coverExt}`;
+  await bucket.put(coverKey, cover.stream(), {
+    httpMetadata: { contentType: COVER_CONTENT_TYPE_BY_EXT[coverExt] || "image/jpeg" },
+  });
+  return coverKey;
+}
+
+// Lets the admin bulk-upload/edit flow attach a cover matched via
+// /api/admin/metadata-search (a Google Books/Open Library image URL)
+// without the browser having to fetch a third-party image itself, which
+// would hit CORS since those aren't our origin. Fetching server-side avoids
+// that entirely. The response's own Content-Type decides the stored
+// extension/type - never the URL's file extension or any client-declared
+// value - and only recognized image types are stored at all.
+export async function fetchAndStoreCoverFromUrl(
+  bucket: R2Bucket,
+  bookId: string,
+  coverUrl: string
+): Promise<string | null> {
+  let parsed: URL;
+  try {
+    parsed = new URL(coverUrl);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+
+  let response: Response;
+  try {
+    response = await fetch(parsed.toString());
+  } catch {
+    return null;
+  }
+  if (!response.ok || !response.body) return null;
+
+  const contentType = (response.headers.get("content-type") || "").split(";")[0].trim();
+  const ext = EXT_BY_COVER_CONTENT_TYPE[contentType];
+  if (!ext) return null;
+
+  const coverKey = `books/${bookId}/cover.${ext}`;
+  await bucket.put(coverKey, response.body, { httpMetadata: { contentType } });
+  return coverKey;
+}

@@ -1300,5 +1300,8 @@
   "Upload all": "Upload all",
   "Clear uploaded": "Clear uploaded",
   "Add a folder": "Add a folder",
+  "Remove cover": "Remove cover",
+  "Saving...": "Saving...",
+  "Title is required": "Title is required",
   "A folder organized as Author then Book Title is read automatically; a cover image next to a book file is attached to it.": "A folder organized as Author then Book Title is read automatically; a cover image next to a book file is attached to it."
 }
