@@ -1289,5 +1289,14 @@
   "Admin": "Admin",
   "Replace cover (optional)": "Replace cover (optional)",
   "Detecting title, author and cover from the book file...": "Detecting title, author and cover from the book file...",
-  "Continue with your email": "Continue with your email"
+  "Continue with your email": "Continue with your email",
+  "Bulk upload": "Bulk upload",
+  "Add book files": "Add book files",
+  "File": "File",
+  "Status": "Status",
+  "Ready": "Ready",
+  "Uploaded": "Uploaded",
+  "Failed": "Failed",
+  "Upload all": "Upload all",
+  "Clear uploaded": "Clear uploaded"
 }

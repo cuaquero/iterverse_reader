@@ -5,6 +5,7 @@ import { withRouter } from "react-router-dom";
 import { Trans } from "react-i18next";
 import { ConfigService } from "../../assets/lib/kookit-extra-browser.min";
 import { extractBookMetadata } from "../../utils/file/bookMetadataExtractor";
+import BulkUpload from "./bulkUpload";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -305,6 +306,8 @@ class Admin extends React.Component<AdminProps, AdminState> {
           )}
           {uploadError && <div className="admin-error">{uploadError}</div>}
         </form>
+
+        <BulkUpload t={this.props.t} onUploaded={this.loadBooks} />
 
         <div className="admin-section-title">
           <Trans>Shared catalog</Trans> ({books.length})
