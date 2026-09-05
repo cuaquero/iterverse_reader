@@ -167,30 +167,30 @@ class EditDialog extends React.Component<EditDialogProps, EditDialogState> {
         )}
         <div className="edit-dialog-title" style={{ position: "relative" }}>
           <Trans>Edit Book</Trans>
-          <div
-            style={{
-              fontSize: 16,
-              color: "rgb(231, 69, 69)",
-              position: "absolute",
-              right: 20,
-              top: 23,
-              cursor: "pointer",
-              opacity: 0.8,
-            }}
-            onClick={() => {
-              if (!this.props.isAuthed) {
-                toast(
-                  this.props.t("Please upgrade to Pro to use this feature")
-                );
-                this.props.handleSetting(true);
-                this.props.handleSettingMode("account");
-                return;
-              }
-              this.setState({ isMetadataDialogOpen: true });
-            }}
-          >
-            <Trans>Get metadata</Trans>
-          </div>
+          {/* Looks up title/author/publisher/description/cover from Google
+              Books (Open Library as a fallback) - see
+              functions/api/admin/metadata-search.ts. Admin-only, matching
+              /admin's catalog-curation gating: this hits third-party
+              services on the caller's behalf, not something to expose to
+              every student editing their own imported book's metadata. */}
+          {this.props.role === "admin" && (
+            <div
+              style={{
+                fontSize: 16,
+                color: "rgb(231, 69, 69)",
+                position: "absolute",
+                right: 20,
+                top: 23,
+                cursor: "pointer",
+                opacity: 0.8,
+              }}
+              onClick={() => {
+                this.setState({ isMetadataDialogOpen: true });
+              }}
+            >
+              <Trans>Get metadata</Trans>
+            </div>
+          )}
         </div>
 
         <div className="edit-dialog-body">

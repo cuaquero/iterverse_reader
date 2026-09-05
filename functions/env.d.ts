@@ -23,4 +23,8 @@ interface Env {
   // `wrangler pages secret put ROSTER_SERVICE_KEY`. Same value the roster
   // service issued via its own `wrangler secret put SERVICE_KEY`.
   ROSTER_SERVICE_KEY?: string;
+  // Optional - unauthenticated Google Books API requests work fine at admin
+  // catalog-curation volume (see functions/api/admin/metadata-search.ts);
+  // this only raises the daily quota if that's ever needed.
+  GOOGLE_BOOKS_API_KEY?: string;
 }

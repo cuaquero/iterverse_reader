@@ -7,8 +7,6 @@ import {
   MetadataResult,
   BookResultItem,
 } from "./interface";
-import toast from "react-hot-toast";
-import { getBookMetadata } from "../../../utils/request/reader";
 
 class MetadataDialog extends React.Component<
   MetadataDialogProps,
@@ -36,13 +34,6 @@ class MetadataDialog extends React.Component<
     const { searchName, searchAuthor } = this.state;
     if (!searchName.trim() && !searchAuthor.trim()) return;
 
-    if (!this.props.isAuthed) {
-      toast(this.props.t("Please upgrade to Pro to use this feature"));
-      this.props.handleSetting(true);
-      this.props.handleSettingMode("account");
-      return;
-    }
-
     this.setState({
       isLoading: true,
       error: "",
@@ -51,20 +42,26 @@ class MetadataDialog extends React.Component<
     });
 
     try {
-      const res = await getBookMetadata(searchName, searchAuthor);
-      if (res && res.code === 200 && res.data) {
-        const data = res.data as BookResultItem[];
-
-        this.setState({ results: data, isLoading: false });
-      } else if (res && res.code === 200 && !res.data) {
-        this.setState({
-          isLoading: false,
-          error: this.props.t("No metadata found"),
-        });
-      } else {
+      const params = new URLSearchParams();
+      if (searchName.trim()) params.set("name", searchName.trim());
+      if (searchAuthor.trim()) params.set("author", searchAuthor.trim());
+      const res = await fetch(`/api/admin/metadata-search?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
         this.setState({
           isLoading: false,
           error: this.props.t("Failed to fetch metadata"),
+        });
+        return;
+      }
+      const data = (await res.json()) as { results: BookResultItem[] };
+      if (data.results && data.results.length > 0) {
+        this.setState({ results: data.results, isLoading: false });
+      } else {
+        this.setState({
+          isLoading: false,
+          error: this.props.t("No metadata found"),
         });
       }
     } catch {
@@ -167,7 +164,7 @@ class MetadataDialog extends React.Component<
               const author = item.author;
               const publisher = item.publisher || "";
               const description = item.description || "";
-              const source = "Cloud";
+              const source = item.source;
               return (
                 <div
                   key={id}
@@ -188,9 +185,7 @@ class MetadataDialog extends React.Component<
                       <div className="metadata-book-name">{title}</div>
                       <div className="metadata-book-author">{author}</div>
                       <div className="metadata-book-source">
-                        {this.props.t("Data source") +
-                          ": " +
-                          this.props.t(source)}
+                        {this.props.t("Data source") + ": " + source}
                       </div>
                     </div>
                   </div>
