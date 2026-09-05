@@ -76,11 +76,32 @@ class Catalog extends React.Component<CatalogProps, CatalogState> {
       (await DatabaseService.getAllRecords("books")) || [];
     const title = normalize(book.title);
     const author = normalize(book.author);
-    return (
-      localBooks.find(
-        (b) => normalize(b.name) === title && normalize(b.author) === author
-      ) || null
+    const match = localBooks.find(
+      (b) => normalize(b.name) === title && normalize(b.author) === author
     );
+    if (!match) return null;
+
+    // A metadata record with no actual file behind it (seen in the wild:
+    // a local storage inconsistency, or left over from a broken import
+    // before the catalog-open fix) sends BookUtil.redirectBook down its
+    // "maybe it's in a configured cloud data source" fallback - a legacy
+    // path from upstream Koodo's cloud-drive sync this deployment doesn't
+    // use, which just toasts "Please add data source..." instead of
+    // opening anything. Treat "no file" as "don't actually have this book"
+    // and drop the orphaned record, so the normal download-and-import path
+    // below runs a real, complete import instead of either hitting that
+    // toast or bouncing off the importer's own MD5 dedupe against a record
+    // that was never actually readable.
+    const hasFile = await BookUtil.isBookExist(
+      match.key,
+      match.format.toLowerCase(),
+      match.path || ""
+    );
+    if (!hasFile) {
+      await DatabaseService.deleteRecord(match.key, "books");
+      return null;
+    }
+    return match;
   };
 
   handleOpenBook = async (book: CatalogBookSummary) => {
