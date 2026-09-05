@@ -255,9 +255,14 @@ sequence in [LTI.md](./LTI.md), on hold along with the rest of that work.
 ## Deployment
 
 **Auto-deploy is wired up**: the Pages project is connected directly to
-`mfoster-stem/koodo-bridge` (Cloudflare's own Git integration, not a GitHub
+`cuaquero/iterverse_reader` (Cloudflare's own Git integration, not a GitHub
 Action), production branch `dev`, automatic deployments enabled. Push to
 `dev` and Cloudflare builds and deploys it — no separate CI needed.
+
+(This repo's local clone may still be named/organized differently — e.g. a
+working directory called `koodo-bridge` — but `origin` should point at
+`cuaquero/iterverse_reader`; that's the actual deploy source. Confirm with
+`git remote -v` if a clone's push doesn't seem to be triggering a build.)
 
 This depends on one dashboard-only setting that **isn't stored in this repo
 and can't be checked into it**: Pages project → Settings → Build →
