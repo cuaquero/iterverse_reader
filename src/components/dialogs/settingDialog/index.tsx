@@ -14,6 +14,7 @@ import { withRouter } from "react-router-dom";
 const mapStateToProps = (state: stateType) => {
   return {
     settingMode: state.manager.settingMode,
+    role: state.manager.role,
   };
 };
 const actionCreator = {

@@ -127,7 +127,16 @@ class SettingDialog extends React.Component<
               "20px"
             )}
 
-            {this.renderSidebarItem("sync", "icon-sync", "Sync and backup", "")}
+            {/* Backup zips up the whole personal library, book file bytes
+                included (see containers/settings/syncSetting/component.tsx) -
+                fine for an admin's own personal-import files, but for a
+                student it would mean downloading a permanent, unmanaged
+                copy of every catalog book they've read, outside any
+                licensing/redistribution constraints on that admin-curated
+                catalog. Admin-only, matching how personal import is gated
+                elsewhere. */}
+            {this.props.role === "admin" &&
+              this.renderSidebarItem("sync", "icon-sync", "Sync and backup", "")}
             {this.renderSidebarItem(
               "more",
               "icon-more",
@@ -201,7 +210,7 @@ class SettingDialog extends React.Component<
               <ShortcutSetting />
             ) : this.props.settingMode === "appearance" ? (
               <AppearanceSetting />
-            ) : this.props.settingMode === "sync" ? (
+            ) : this.props.settingMode === "sync" && this.props.role === "admin" ? (
               <SyncSetting />
             ) : this.props.settingMode === "account" ? (
               <AccountSetting />

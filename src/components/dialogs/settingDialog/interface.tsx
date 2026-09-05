@@ -7,5 +7,6 @@ export interface SettingInfoProps extends RouteComponentProps<any> {
   handleFetchPlugins: () => void;
   t: (title: string) => string;
   settingMode: string;
+  role: "student" | "admin" | null;
 }
 export interface SettingInfoState {}

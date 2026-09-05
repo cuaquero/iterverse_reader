@@ -14,8 +14,16 @@ import { restore } from "../../../utils/file/restore";
 // Personal book *file* bytes are intentionally local-only (see repo docs),
 // so the one sync/backup feature that's still real and useful here is a
 // local, no-account backup/restore of the whole library to/from a zip file
-// on this device - kept below for anyone (students or admins) who wants a
-// personal safety copy.
+// on this device.
+//
+// Admin-only (gated in settingDialog/component.tsx, not here): the backup
+// zip includes actual book file bytes, not just notes/highlights/settings.
+// Originally left open to students too, on the assumption their personal
+// library only ever held their own files - that stopped being true once
+// students could successfully download and read admin-curated catalog
+// books, at which point this became a way to walk off with a permanent,
+// unmanaged copy of the whole catalog. Don't reopen this to students
+// without a plan for that.
 class SyncSetting extends React.Component<SettingInfoProps, SettingInfoState> {
   constructor(props: SettingInfoProps) {
     super(props);
