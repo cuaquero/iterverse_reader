@@ -184,15 +184,59 @@ Routes:
 - `GET /api/books` — list catalog metadata. Any authenticated user.
 - `GET /api/books/:id` — one book's metadata. Any authenticated user.
 - `POST /api/books` — upload (`multipart/form-data`, fields: `file` required,
-  `cover`/`title`/`author` optional). **Admin only** — 403 for students.
-  Content-Type stored in R2 is derived from a hardcoded file-extension map,
-  not trusted from the upload — a past security-audit fix, don't revert to
-  trusting `file.type`.
+  `cover`/`title`/`author` optional, `coverUrl` optional — a remote image URL
+  fetched server-side instead of an uploaded file, used when the admin UI
+  applies a metadata-search match instead of picking a cover file). **Admin
+  only** — 403 for students. Content-Type stored in R2 is derived from a
+  hardcoded file-extension map (or, for `coverUrl`, from the fetch response's
+  own Content-Type header), never trusted from the upload/URL — a past
+  security-audit fix, don't revert to trusting `file.type` or a URL's
+  extension.
+- `PATCH /api/books/:id` — edit an existing entry's `title`/`author`/cover
+  after the fact (same `cover`/`coverUrl` fields as POST, plus `removeCover`
+  to clear it), without removing and re-adding it. **Admin only.** Cover
+  keys are deterministic (`books/{id}/cover.{ext}`), so a same-extension
+  replacement overwrites the R2 object in place — see
+  `functions/api/books/[id].ts`'s own comment before changing the
+  old-key-cleanup logic, since deleting unconditionally there would erase a
+  same-extension replacement right after writing it.
 - `DELETE /api/books/:id` — remove a book and its R2 objects. **Admin only.**
 - `GET /api/books/:id/file` — streams the book file straight from R2 (not a
   presigned URL — keeps the bucket private, no R2 API-token signing to set
   up). Supports `Range` requests since EPUB/PDF readers do partial reads.
 - `GET /api/books/:id/cover` — same, for the cover image, if one was uploaded.
+
+### Admin catalog curation (client-side, no new data model)
+
+The admin UI (`/admin`, Books tab) has three ways to get books and their
+metadata into the catalog, all layered on the routes above rather than any
+separate backend concept:
+
+- **One at a time** (`src/pages/admin/component.tsx`) — the original "Add a
+  book" form, with client-side title/author/cover auto-extraction from the
+  file's own embedded metadata (`src/utils/file/bookMetadataExtractor.ts`).
+- **In bulk** (`src/pages/admin/bulkUpload.tsx`) — pick multiple loose files,
+  or a whole folder. A folder organized as `Author/Book Title/file` (however
+  deeply nested above that) is parsed automatically: the two folder levels
+  immediately above each file become author/title, and a cover image sitting
+  next to a book file in the same folder is attached to it. Each file still
+  uploads as its own `POST /api/books` call — no bulk-specific backend route.
+- **Editing after the fact** (`src/pages/admin/editBookRow.tsx`) — per-row
+  "Edit" in the catalog table, backed by `PATCH /api/books/:id` above.
+
+Both the single-add form and the bulk/edit rows can also look up metadata
+online instead of relying on the file's own embedded data or manual entry —
+`GET /api/admin/metadata-search?name=&author=` (**admin only**,
+`functions/api/admin/metadata-search.ts`) queries Google Books first (best
+coverage for real books, includes description/cover), falling back to Open
+Library (free, no key) only if Google Books comes up empty. This replaced
+upstream Koodo's own "Get metadata" dialog, which called Koodo's own cloud
+service — dormant here since `isAuthed` no longer means "Pro subscriber" (see
+CLAUDE.md's settings-cut notes), but still would have quietly sent every
+signed-in user's search terms to a third party if left wired to it. An
+optional `GOOGLE_BOOKS_API_KEY` secret raises Google's request quota if
+curation volume ever needs it; unauthenticated requests work fine at normal
+admin-curation volume.
 
 ### User roles
 
@@ -222,6 +266,7 @@ npm install -D wrangler   # or use npx wrangler as shown throughout
 #   MICROSOFT_CLIENT_ID=...
 #   MICROSOFT_CLIENT_SECRET=...
 #   ROSTER_SERVICE_KEY=...
+#   GOOGLE_BOOKS_API_KEY=...   # optional - see "Admin catalog curation" above
 
 yarn build
 npx wrangler pages dev ./build
