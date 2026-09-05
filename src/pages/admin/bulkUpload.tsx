@@ -19,9 +19,66 @@ interface BulkUploadItem {
   coverUrl: string | null;
   title: string;
   author: string;
+  // True when title/author came from a folder-upload's Author/Book Title
+  // directory structure (see groupFilesByFolder) rather than a filename
+  // guess. That's curated data the admin already organized on disk, not a
+  // weak placeholder - extractForItem must never let file-embedded
+  // metadata silently overwrite it, unlike the flat-file-select path where
+  // the filename really is just a placeholder worth replacing.
+  titleLocked: boolean;
+  authorLocked: boolean;
   isExtracting: boolean;
   status: "pending" | "uploading" | "done" | "error";
   error: string | null;
+}
+
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp"]);
+
+interface FolderGroup {
+  author: string;
+  title: string;
+  bookFiles: File[];
+  imageFile: File | null;
+}
+
+// Groups a folder-picked FileList by directory, matching the
+// "All Books > Author > Book Title > file" layout described when this was
+// built: the file's two nearest parent folders (whatever sits above the
+// picked root) are read as author/title, however deep the picked folder
+// itself is nested. A title folder holding more than one non-image file
+// (e.g. both an .epub and a .pdf) produces one row per file, all sharing
+// the same folder-derived author/title and cover image, rather than
+// silently dropping any of them.
+function groupFilesByFolder(files: File[]): FolderGroup[] {
+  const groups = new Map<string, FolderGroup>();
+  for (const file of files) {
+    const relPath = (file as any).webkitRelativePath || file.name;
+    const folderSegments: string[] = relPath.split("/").slice(0, -1).filter(Boolean);
+
+    let author = "";
+    let title = "";
+    if (folderSegments.length >= 3) {
+      title = folderSegments[folderSegments.length - 1];
+      author = folderSegments[folderSegments.length - 2];
+    } else if (folderSegments.length === 2) {
+      title = folderSegments[folderSegments.length - 1];
+    }
+
+    const key = folderSegments.join("/");
+    let group = groups.get(key);
+    if (!group) {
+      group = { author, title, bookFiles: [], imageFile: null };
+      groups.set(key, group);
+    }
+
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      if (!group.imageFile) group.imageFile = file;
+    } else {
+      group.bookFiles.push(file);
+    }
+  }
+  return Array.from(groups.values());
 }
 
 interface BulkUploadProps {
@@ -69,6 +126,8 @@ class BulkUpload extends React.Component<BulkUploadProps, BulkUploadState> {
       coverUrl: null,
       title: file.name.replace(/\.[^.]+$/, ""),
       author: "",
+      titleLocked: false,
+      authorLocked: false,
       isExtracting: true,
       status: "pending",
       error: null,
@@ -78,9 +137,54 @@ class BulkUpload extends React.Component<BulkUploadProps, BulkUploadState> {
     newItems.forEach((item) => this.extractForItem(item.id, item.file));
   };
 
+  // Folder picker counterpart to handleFilesSelected - reads the
+  // Author/Book Title structure (see groupFilesByFolder) instead of
+  // treating every file as its own unrelated row. Still runs
+  // extractForItem per file afterward so a cover can be pulled from the
+  // book file itself when the folder didn't already supply one (e.g. no
+  // separate cover image next to it).
+  handleFolderSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    const groups = groupFilesByFolder(files);
+    const newItems: BulkUploadItem[] = [];
+    for (const group of groups) {
+      for (const bookFile of group.bookFiles) {
+        // A fresh object URL per row even when they share one File - rows
+        // revoke their own coverObjectUrl independently (manual cover
+        // replace, "Get metadata" apply, remove), and revoking one shared
+        // URL string would break the preview for every other row still
+        // holding that same string, even though the underlying File is
+        // still perfectly valid.
+        newItems.push({
+          id: `row-${nextRowId++}`,
+          file: bookFile,
+          coverFile: group.imageFile,
+          coverObjectUrl: group.imageFile ? URL.createObjectURL(group.imageFile) : null,
+          coverUrl: null,
+          title: group.title || bookFile.name.replace(/\.[^.]+$/, ""),
+          author: group.author,
+          titleLocked: !!group.title,
+          authorLocked: !!group.author,
+          isExtracting: true,
+          status: "pending",
+          error: null,
+        });
+      }
+    }
+    if (newItems.length === 0) return;
+
+    this.setState((prev) => ({ items: [...prev.items, ...newItems] }));
+    newItems.forEach((item) => this.extractForItem(item.id, item.file));
+  };
+
   // Mirrors admin/component.tsx's handleBookFileChange, just per-row: only
   // fills in fields that come back non-empty, never blocks upload on
-  // failure or an unsupported format.
+  // failure or an unsupported format. Folder-derived title/author
+  // (titleLocked/authorLocked) are never overwritten here - see their own
+  // comment on BulkUploadItem for why.
   extractForItem = async (id: string, file: File) => {
     let extracted: Awaited<ReturnType<typeof extractBookMetadata>> = null;
     try {
@@ -93,7 +197,9 @@ class BulkUpload extends React.Component<BulkUploadProps, BulkUploadState> {
       const item = prev.items.find((i) => i.id === id);
       // Row got removed while extraction was running.
       if (!item) return { items: prev.items };
-      if (extracted?.coverFile && item.coverObjectUrl) {
+      const shouldUseExtractedCover =
+        !!extracted?.coverFile && !item.coverFile && !item.coverUrl;
+      if (shouldUseExtractedCover && item.coverObjectUrl) {
         URL.revokeObjectURL(item.coverObjectUrl);
       }
       return {
@@ -101,11 +207,11 @@ class BulkUpload extends React.Component<BulkUploadProps, BulkUploadState> {
           row.id === id
             ? {
                 ...row,
-                title: extracted?.title ? extracted.title : row.title,
-                author: extracted?.author ? extracted.author : row.author,
-                coverFile: extracted?.coverFile || row.coverFile,
-                coverObjectUrl: extracted?.coverFile
-                  ? URL.createObjectURL(extracted.coverFile)
+                title: !row.titleLocked && extracted?.title ? extracted.title : row.title,
+                author: !row.authorLocked && extracted?.author ? extracted.author : row.author,
+                coverFile: shouldUseExtractedCover ? extracted!.coverFile : row.coverFile,
+                coverObjectUrl: shouldUseExtractedCover
+                  ? URL.createObjectURL(extracted!.coverFile as File)
                   : row.coverObjectUrl,
                 isExtracting: false,
               }
@@ -235,10 +341,28 @@ class BulkUpload extends React.Component<BulkUploadProps, BulkUploadState> {
         <div className="admin-section-title">
           <Trans>Bulk upload</Trans>
         </div>
-        <label className="admin-file-label">
-          <Trans>Add book files</Trans>
-          <input type="file" multiple onChange={this.handleFilesSelected} />
-        </label>
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <label className="admin-file-label">
+            <Trans>Add book files</Trans>
+            <input type="file" multiple onChange={this.handleFilesSelected} />
+          </label>
+          <label className="admin-file-label">
+            <Trans>Add a folder</Trans>
+            <input
+              type="file"
+              multiple
+              // webkitdirectory/directory aren't in React's file-input
+              // typings but are widely supported (Chrome, Edge, Safari,
+              // Firefox) for picking a whole folder tree via the native
+              // file-input dialog.
+              {...({ webkitdirectory: "", directory: "" } as any)}
+              onChange={this.handleFolderSelected}
+            />
+          </label>
+        </div>
+        <div className="admin-extracting-hint">
+          <Trans>A folder organized as Author then Book Title is read automatically; a cover image next to a book file is attached to it.</Trans>
+        </div>
 
         {items.length > 0 && (
           <>

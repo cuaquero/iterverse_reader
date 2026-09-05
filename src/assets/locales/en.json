@@ -1298,5 +1298,7 @@
   "Uploaded": "Uploaded",
   "Failed": "Failed",
   "Upload all": "Upload all",
-  "Clear uploaded": "Clear uploaded"
+  "Clear uploaded": "Clear uploaded",
+  "Add a folder": "Add a folder",
+  "A folder organized as Author then Book Title is read automatically; a cover image next to a book file is attached to it.": "A folder organized as Author then Book Title is read automatically; a cover image next to a book file is attached to it."
 }
