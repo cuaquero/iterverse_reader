@@ -12,7 +12,14 @@ export async function checkRosterEntitlement(env: Env, email: string): Promise<b
     },
     body: JSON.stringify({ email, product: "reader" }),
   });
-  if (!response.ok) return false;
+  if (!response.ok) {
+    // Distinguishes a roster-service/auth failure (bad ROSTER_SERVICE_KEY,
+    // outage, etc.) from a genuine "not entitled" - both used to collapse
+    // into the same silent `false`, making a token problem indistinguishable
+    // from a real lockout in `wrangler pages deployment tail`.
+    console.error(`checkRosterEntitlement: roster API returned ${response.status} for entitlement check`);
+    return false;
+  }
   const data = await response.json<{ entitled?: boolean }>().catch(() => ({ entitled: false }));
   return data.entitled === true;
 }
