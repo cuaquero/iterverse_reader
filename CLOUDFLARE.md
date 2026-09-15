@@ -91,6 +91,26 @@ enrollment record in `iterverse_hub` gets bounced to `/no-access`. If real
 users report being locked out, check the roster's data first; it's a
 different repo/service from this one.
 
+**Troubleshooting a `/no-access` report:** `checkRosterEntitlement` used to
+collapse a roster-service/auth failure (a stale `ROSTER_SERVICE_KEY`, an
+outage, a timeout — anything non-2xx from `ROSTER_API_URL`) into the exact
+same silent `false` as a genuine "not entitled," so a token problem and a
+real lockout were indistinguishable from the outside. It now
+`console.error`s the response status on that path before returning `false` —
+run `npx wrangler pages deployment tail --project-name=iterverse-reader` (or
+`... <deployment-id>` for a specific one; wrangler's non-interactive mode
+needs an explicit ID, see `npx wrangler pages deployment list`) while the
+affected user retries sign-in. A logged `checkRosterEntitlement: roster API
+returned 401/403/5xx...` line points at `ROSTER_SERVICE_KEY` or the roster
+service itself; no log line at all (just the plain `/no-access` redirect)
+means the roster API answered cleanly with `entitled: false` — a real data
+gap in `iterverse_hub` for that email, not a token issue. One 2026-09-14
+incident on a "proven working" account resolved on its own between the
+report and this check (no error logged on the successful retry) — treat a
+non-reproducing report as still worth a log check next time before assuming
+it's transient, since this is the first occurrence caught with the logging
+in place.
+
 ### Google & Microsoft OAuth (built, not yet activated)
 
 The backend is fully built, deployed, and roster-gated identically to the
