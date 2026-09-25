@@ -37,6 +37,13 @@ Config lives in `wrangler.jsonc` at the repo root. Bindings there:
 `ALLOWED_EMAIL_DOMAIN` (`btech.edu`), `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, and
 `ROSTER_API_URL`.
 
+**Unrelated to Reader, in the same shared account:** a Zero Trust Access
+Application named `Kavita Spike OIDC` and a Cloudflare Tunnel, both created for
+the Kavita fork investigation (`docs/kavita-fork-investigation.md`), pointed at
+a throwaway Proxmox VM rather than anything in this repo. Don't confuse them
+with Reader's own Access Application when browsing the Zero Trust dashboard -
+they're disposable spike infrastructure, not part of this deployment.
+
 ## Current status: live
 
 The app is live and requires sign-in — there is no placeholder/under-construction

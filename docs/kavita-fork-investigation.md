@@ -340,6 +340,49 @@ against the patched instance (not copying it) so the `GetClaimsFromUserInfoEndpo
 patch can actually be tested in isolation, rather than confusing "config didn't
 transfer" with "the patch doesn't work."
 
+## Patch confirmed working (2026-09-25)
+
+After the infra outage above (root cause: an IP conflict with the separate Iterverse
+Scheduler VM over `.70` — the spike VM now has its own static `.21`, unrelated to
+Kavita itself but worth remembering if this VM ever needs re-networking again), and
+after ruling out a copied-database confound as the actual source of the
+"OIDC not enabled" symptom seen mid-test (a **fresh** admin account + fresh
+`oidcConfig` applied via the API, rather than copying an existing SQLite DB, is the
+reliable way to test this — copying the DB across process restarts introduced at
+least one confound, likely related to how the JWT `TokenKey` interacts with
+encrypted-at-rest settings; not root-caused further since it's a testing artifact,
+not a product concern):
+
+**The one-line patch works.** With `GetClaimsFromUserInfoEndpoint = false` and a
+freshly-configured `oidcConfig` (same Authority/ClientId/Secret as the original
+failing test), a real Cloudflare Access OTP login completed the entire flow
+end-to-end for the first time — server log:
+
+```
+Kavita.Services.OidcService Creating new user from OIDC: m*************@btech.edu - <oidc-sub>
+```
+
+No `"Unknown response type"` error. A new Kavita account was auto-provisioned
+correctly from the Access identity. This confirms the diagnosis from the section
+above was correct and sufficient — the UserInfo-endpoint call really was the entire
+blocker, and skipping it is enough for login to work.
+
+**What's still unverified, deliberately out of scope for this pass:** role/library
+claim mapping (`syncUserSettings` was left `false` for this test, so the new user got
+Kavita's bare defaults, not anything derived from a roster role) and the
+roster-entitlement bridge (Access's own policy gated this login, but nothing yet
+routes through the actual `checkRosterEntitlement` check the way Reader's
+`access.ts` does). Both are the next real steps, not blocked by anything found here.
+
+**Recommendation:** file this upstream with the precise diagnosis (UserInfo
+Content-Type strictness + hardcoded `GetClaimsFromUserInfoEndpoint`), since it's a
+much more actionable report than the original thin issue and plausibly gets fixed
+or made configurable in Kavita itself — which would mean this fork needs no source
+changes at all, only configuration. If upstream doesn't act on it, this one line is
+the closest thing to a justified exception to "never touch core auth" from the
+fork-scoping section above — precisely because it's this narrow, this well-understood,
+and there's a real chance it gets superseded by an upstream fix.
+
 ## Spike plan (Proxmox VM)
 
 Once the VM is up and access is handed over:
