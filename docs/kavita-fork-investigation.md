@@ -1,7 +1,19 @@
 # Investigation: forking Kavita as a Koodo/Reader replacement
 
-**Status:** research / pre-spike. No code has been forked yet.
-**Author:** Matthew Foster, with Claude (research pass 2026-09-24)
+**Status:** decided and forked (2026-09-25). Product name: **Iterverse Library**.
+Fork lives at [cuaquero/iterverse_library](https://github.com/cuaquero/iterverse_library),
+cloned locally at `~/Documents/GitHub/iterverse_library` - a sibling repo to
+this one, not a subdirectory of it. Follows the exact same pattern as this
+repo's own `koodo-reader` → `iterverse_reader` fork: `origin` is the fork,
+`upstream` tracks `Kareadita/Kavita` directly, so `git fetch upstream` +
+merge/rebase stays available going forward. Scope: a full rebrand (new name,
+logo, "powered by" line removed or changed) rather than theme-only, following
+[camplight/nest](https://github.com/camplight/nest)'s PR #1 as the reference
+for how to do this without scattering changes through the codebase - see the
+fork-scoping section below for the ground rules this needs to follow to stay
+upstream-mergeable.
+**Author:** Matthew Foster, with Claude (research pass 2026-09-24, fork
+created 2026-09-25)
 
 ## TL;DR
 
