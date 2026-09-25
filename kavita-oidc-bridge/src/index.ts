@@ -9,16 +9,20 @@
 // which this account doesn't have; Access's own native policies/groups
 // aren't otherwise exposed as an OIDC claim).
 //
-// This Worker fills that one gap and nothing else: it IS the OIDC
-// provider Kavita talks to (its `authority`), but the actual
-// authentication is still 100% Cloudflare Access - this Worker's own
-// `/authorize` route sits behind a normal Access Application (OTP), the
-// exact same pattern koodo-bridge's own functions/api/auth/access.ts
-// uses for Reader's login. All this Worker adds is: after Access has
-// verified who someone is, look up whether they're on the same
-// "Instructor Dashboard Users" admin list Iterverse already uses
-// elsewhere, and put that into the token as a role claim Kavita
-// understands out of the box (its default RolesClaim).
+// This Worker fills that gap: it IS the OIDC provider Kavita talks to
+// (its `authority`), but the actual authentication is still 100%
+// Cloudflare Access - this Worker's own `/authorize` route sits behind a
+// normal Access Application (OTP), the exact same pattern koodo-bridge's
+// own functions/api/auth/access.ts uses for Reader's login. After Access
+// has verified who someone is, this Worker does two things Access alone
+// can't: (1) checks the Iterverse roster service for an active
+// enrollment - same `checkRosterEntitlement` rule Reader's own
+// access.ts enforces, via roster.ts copied verbatim from there - since
+// Access authenticating someone only proves they control an email
+// address, not that they're a real enrolled BTECH person; and (2) looks
+// up whether they're on the same "Instructor Dashboard Users" admin list
+// Iterverse already uses elsewhere, putting that into the token as a
+// role claim Kavita understands out of the box (its default RolesClaim).
 //
 // Known limitation, deliberate for now: ADMIN_EMAILS (below) is a
 // separate, manually-maintained copy of the "Instructor Dashboard Users"
@@ -29,6 +33,7 @@
 // If this becomes real infrastructure, that's the first thing to fix.
 
 import { verifyAccessJwt } from "../access";
+import { checkRosterEntitlement } from "../roster";
 import { signJwt, verifyOwnJwt } from "./jwt";
 
 export interface Env {
@@ -52,6 +57,10 @@ export interface Env {
   SIGNING_KEY_PUBLIC_JWK: string;
   /** JSON-stringified array of admin emails (Worker secret - see note above) */
   ADMIN_EMAILS: string;
+  /** Iterverse roster service base URL, e.g. https://roster-api.iterverse.net */
+  ROSTER_API_URL: string;
+  /** Bearer key shared with the roster service's own SERVICE_KEY (Worker secret) */
+  ROSTER_SERVICE_KEY: string;
 }
 
 const ROLES_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
@@ -121,6 +130,19 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const email = jwt ? await verifyAccessJwt(jwt, env.ACCESS_TEAM_DOMAIN, env.ACCESS_AUD) : null;
   if (!email) {
     return json({ error: "access_denied", error_description: "No verified Access session" }, 403);
+  }
+
+  // Access authenticating someone only proves they control that email
+  // address - it says nothing about whether they're a real, currently
+  // enrolled BTECH person. Mirrors Reader's own access.ts: reject before
+  // ever minting a code, same as Reader rejects before creating a session.
+  const entitled = await checkRosterEntitlement(env, email);
+  if (!entitled) {
+    const redirect = new URL(redirectUri);
+    redirect.searchParams.set("error", "access_denied");
+    redirect.searchParams.set("error_description", "not_entitled");
+    redirect.searchParams.set("state", state);
+    return Response.redirect(redirect.toString(), 302);
   }
 
   const roles = isAdmin(email, env.ADMIN_EMAILS) ? ["Admin", "Login"] : ["Login"];

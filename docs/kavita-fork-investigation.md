@@ -440,15 +440,49 @@ Cloudflare hostname (`*.workers.dev`, `*.trycloudflare.com`) reachable from
 inside BTECH's own network - always attach a real `iterverse.net` (or other
 owned-zone) hostname first.**
 
-**What's still open:** the bridge's own gating Access Application currently
-uses the existing "Student Login (OTP)" policy as a stand-in broad-entitlement
-gate - not yet wired to the real roster-entitlement check
-(`checkRosterEntitlement`-equivalent) the way Reader's `access.ts` does. That
-policy choice was deliberate for this pass (avoid widening real access before
-the entitlement gate exists) but is the natural next thing to fix, and this
-same bridge Worker is now the natural place to add it - an External
-Evaluation rule or a request to the real roster service, right alongside the
-admin-role check that's already there.
+## Roster-entitlement bridge: built and confirmed working (2026-09-25)
+
+The remaining open item from the section above - the bridge's own Access
+Application gate was a stand-in broad policy, not the real entitlement check.
+Fixed by adding `checkRosterEntitlement` (copied verbatim from this repo's
+`functions/lib/roster.ts`, same precedent as `access.ts`) directly into
+`kavita-oidc-bridge`'s `/authorize` handler: after Access verifies who someone
+is, the bridge now calls the same Iterverse roster service Reader's own
+`access.ts` calls, with `product: "kavita"` instead of `"reader"`, and rejects
+before ever minting a code if the response isn't `entitled: true` - mirroring
+Reader's "reject before creating a session" pattern exactly.
+
+**Confirmed working for the positive case** - a real login (Matthew's own
+account, an active, entitled BTECH identity) completed the entire chain
+end-to-end with the roster check now in place, still correctly syncing
+`["Admin","Login"]` roles afterward. Since `checkRosterEntitlement`'s `fetch`
+isn't wrapped in a try/catch, a network/DNS failure calling the roster API
+would have surfaced as a hard 500 rather than a silent pass - the clean
+success is real evidence the call executed, not just that it was skipped.
+
+**Not yet tested: the negative case** (a non-entitled email correctly getting
+bounced with `error=access_denied`). No second, non-entitled test account was
+available to exercise this live - the rejection path is implemented and code-
+reviewed against the identical logic Reader's own `access.ts` already runs in
+production, but hasn't been independently verified end-to-end the way the
+positive case has.
+
+**One open question, unconfirmed either way:** whether `iterverse_hub` (the
+roster service) needs `"kavita"` pre-registered as a known product, or treats
+that field as free-form/log-only. This is the first non-Reader caller of
+`checkRosterEntitlement` - worth checking with whoever owns `iterverse_hub`
+before trusting this in anything beyond a spike, in case entitled accounts
+get rejected specifically because Kavita as a product isn't recognized yet
+(which the code above wouldn't distinguish from a real "not entitled" - the
+same class of ambiguity the `/no-access` runbook in CLOUDFLARE.md already
+warns about for Reader).
+
+**Also still open:** whether the bridge's own gating Access Application
+should now be widened from "Student Login (OTP)" to something closer to
+Reader's own model (any OTP'd email, no policy-level allowlist, since the
+roster check *is* the real gate) - left as-is for this pass since narrowing
+access is always safer than widening it without discussion, but worth
+revisiting once the "kavita" product-registration question above is settled.
 
 **Also still open, deliberately not filed yet:** the upstream Kavita
 UserInfo-endpoint bug from the section above - the fix here didn't change
