@@ -383,6 +383,77 @@ the closest thing to a justified exception to "never touch core auth" from the
 fork-scoping section above — precisely because it's this narrow, this well-understood,
 and there's a real chance it gets superseded by an upstream fix.
 
+## Role/library claim mapping: built and confirmed working (2026-09-25)
+
+Picked up the two open items from the last spike session: role/library claim
+mapping (this section) and the roster-entitlement bridge (partially addressed
+below, not finished).
+
+**Why Access's own claim-mapping UI couldn't do this.** Investigated
+Cloudflare Access's "Add claim"/"IdP claim" feature on the SaaS OIDC
+application directly (the natural first thing to try, since Matthew already
+had exactly the right list ready to reuse - the "Instructor Dashboard Users"
+Access policy, a plain inline email list spanning several BTECH-partner
+districts, already used by 9 other Iterverse apps as their admin gate). Result:
+that feature only maps claims from an *externally connected* Zero Trust
+identity provider (Okta, Entra, etc.) - confirmed both empirically (the IdP
+claim dropdown shows "No valid options" no matter which scope is selected,
+since Access's own OTP is the identity source here, not an external IdP) and
+via Cloudflare's own docs. Access's native Groups/policies are simply not
+exposed as an OIDC claim to a downstream SaaS app - a real gap in the model,
+not a missing checkbox.
+
+**The fix: `kavita-oidc-bridge`, a new standalone Cloudflare Worker** (new
+top-level directory in this repo, deployed as its own Worker - NOT part of
+this repo's `functions/`/Pages deployment, kept clearly separate per
+CLOUDFLARE.md's note). It's a minimal OIDC provider: Kavita's `authority` now
+points at this bridge instead of Access directly, but the actual
+authentication is still 100% Access - the bridge's own `/authorize` route
+sits behind a normal Access Application (self-hosted, OTP, same pattern as
+this repo's own `functions/api/auth/access.ts`, whose JWT-verification code
+was copied in verbatim rather than reimplemented). After Access verifies who
+someone is, the bridge checks their email against the same "Instructor
+Dashboard Users" list (currently a manually-maintained copy, not a live API
+call to Access - see the code comment in `src/index.ts` for why that's a
+deliberate, documented tradeoff for now) and mints its own signed OIDC token
+carrying a real role claim (`Admin`+`Login`, or just `Login`) using Kavita's
+*default* `RolesClaim` name - no Kavita-side config beyond `authority`/
+`clientId`/`secret` and flipping `syncUserSettings` to `true`.
+
+**Confirmed working end-to-end** - server log from a real Access OTP login:
+
+```
+Kavita.Services.OidcService Syncing access roles for user 2, found roles ["Admin","Login"]
+Kavita.Services.OidcService User 2 is admin, granting access to all age ratings
+```
+
+**A second BTECH-network TLS-interception incident, same pattern as the
+`trycloudflare.com` one from the last session:** the bridge's default
+`*.workers.dev` hostname hit the identical `UntrustedRoot` failure - BTECH's
+firewall doesn't trust that domain either, confirmed both via .NET's own
+exception (`AuthenticationException: ... UntrustedRoot`) and a matching `curl`
+failure from the VM. Fixed the same way as last time: gave the Worker a real
+hostname under `iterverse.net` (Workers → Custom Domains) instead of the
+shared `workers.dev` one. Worth remembering as a standing rule for anything
+hosted on this network going forward: **never rely on a shared/anonymous
+Cloudflare hostname (`*.workers.dev`, `*.trycloudflare.com`) reachable from
+inside BTECH's own network - always attach a real `iterverse.net` (or other
+owned-zone) hostname first.**
+
+**What's still open:** the bridge's own gating Access Application currently
+uses the existing "Student Login (OTP)" policy as a stand-in broad-entitlement
+gate - not yet wired to the real roster-entitlement check
+(`checkRosterEntitlement`-equivalent) the way Reader's `access.ts` does. That
+policy choice was deliberate for this pass (avoid widening real access before
+the entitlement gate exists) but is the natural next thing to fix, and this
+same bridge Worker is now the natural place to add it - an External
+Evaluation rule or a request to the real roster service, right alongside the
+admin-role check that's already there.
+
+**Also still open, deliberately not filed yet:** the upstream Kavita
+UserInfo-endpoint bug from the section above - the fix here didn't change
+that recommendation, just confirmed the whole chain works once it's patched.
+
 ## Spike plan (Proxmox VM)
 
 Once the VM is up and access is handed over:
