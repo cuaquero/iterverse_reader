@@ -196,6 +196,150 @@ of page 1" so much as "the parse/import step happens once, server-side, and
 is retriable/observable" — which is still the thing that matters for killing
 the current fail-vector complaint, just not literally the word "streaming."
 
+## Spike results (2026-09-25): the OIDC blocker is confirmed, not theoretical
+
+Ran the spike on a Proxmox VM (Ubuntu 24.04, Docker, `linuxserver/kavita`, fronted by
+a named Cloudflare Tunnel at a real `iterverse.net` hostname so the OIDC redirect
+had a trusted HTTPS callback). Result: **the exact failure from [Kavita#4726](https://github.com/Kareadita/Kavita/issues/4726)
+reproduces on the current version (0.9.1.4, essentially the same as the issue's 0.9.0)**,
+not just a risk from an old GitHub thread.
+
+What was tested and ruled out first:
+- Kavita's `oidcConfig` (authority/clientId/secret) applied cleanly via its admin API —
+  confirmed a real, separate bug in the process: the public `/api/settings/oidc`
+  endpoint the login page reads from caches its value in memory and does **not**
+  pick up a settings change until the container restarts. Any future OIDC config
+  change on a real deployment needs a restart to take effect, not just a save.
+- Cloudflare Access's own "Advanced OIDC flows" setting was checked and is already
+  on **"No additional OIDC flows"** — the standard authorization-code flow, which is
+  the recommended/default and exactly what Kavita's OIDC client should expect. There
+  is no `response_mode`/`response_type` override exposed anywhere in Access's SaaS-app
+  UI to try as an alternative.
+
+With the Access side confirmed correct, the login attempt (real Access OTP login,
+policy-gated, successful up through Access's own auth) still failed on the callback
+into Kavita with:
+
+```
+Microsoft.AspNetCore.Authentication.AuthenticationFailureException: Unknown response type:
+```
+
+**Root cause found, and it's precise.** Cloned Kavita's actual source
+(`Kareadita/Kavita`, current `main`) and grepped for the error string's origin. It is
+**not** Kavita's own code — it's thrown by Microsoft's shared ASP.NET Core OIDC
+middleware, in `OpenIdConnectHandler.GetUserInformationAsync()`
+([source](https://github.com/dotnet/aspnetcore/blob/main/src/Security/Authentication/OpenIdConnect/src/OpenIdConnectHandler.cs#L1083)):
+
+```csharp
+return HandleRequestResult.Fail("Unknown response type: " + contentType?.MediaType, properties);
+```
+
+This fires *after* a successful authorization-code → token exchange, while fetching
+additional claims from the provider's **UserInfo endpoint** — the middleware requires
+that response's `Content-Type` header to be exactly `application/json` or
+`application/jwt`; anything else (including a missing header entirely, which matches
+our blank error value) fails hard. Cloudflare Access's UserInfo endpoint response
+almost certainly isn't returning one of those two exact values.
+
+The reason this call happens at all, and can't be avoided from Kavita's admin
+settings: `Kavita.Server/Extensions/IdentityServiceExtensions.cs:241` hardcodes
+`options.GetClaimsFromUserInfoEndpoint = true;`. Checked the full backing
+`OpenIdConnectSettings` config class (`Kavita.Common/Configuration.cs`) — it only
+has `Authority`/`ClientId`/`Secret`/`CustomScopes`, no toggle for this at all. So this
+isn't a misconfiguration on either side; it's a fixed behavior in Kavita's code path
+that Cloudflare Access's response shape doesn't satisfy.
+
+Notably, Kavita already explicitly maps `email`/`name`/`given_name` from claims
+(`options.ClaimActions.MapJsonKey(...)`, same file) — claims that are also present
+directly in the ID token for most providers, including Access. That suggests the
+UserInfo call may not be strictly necessary for login to work at all, which is what
+makes this look like a narrow, viable patch rather than a fundamental incompatibility.
+
+**This changes the risk assessment from the earlier section of this doc.** "Auth is
+config + one small Worker, no fork needed" was the hoped-for outcome; what's actually
+true today is that Cloudflare Access cannot complete an OIDC login into Kavita at all
+as shipped, independent of the roster-entitlement bridge work, which was never
+reached. Before committing further to the "branding-only fork" plan, this needs one of:
+
+- **Testing a one-line patch** (`options.GetClaimsFromUserInfoEndpoint = false;`, or
+  making it configurable and defaulting it off) against a locally-built Kavita image,
+  to confirm login completes and the mapped claims (email/name) still arrive correctly
+  from the ID token alone. Not yet done — this is the next concrete step, and would
+  need .NET build tooling on the spike VM or a local dev machine.
+- Filing this upstream with the precise diagnosis above — much more actionable than
+  [#4726](https://github.com/Kareadita/Kavita/issues/4726)'s original thin report, and
+  a plausible small accepted fix (possibly with a config toggle) rather than a
+  Kavita-specific incompatibility to route around.
+- If upstream doesn't take it, this would be the one exception worth making to the
+  "never touch core auth in the fork" rule from the scoping section above — but only
+  this one narrow line, kept in its own commit, clearly documented, and revisited
+  every time the fork rebases against upstream in case they fix it independently.
+
+## Patch attempt (2026-09-25): in progress, interrupted by an infra outage
+
+Went looking for whether the UserInfo-endpoint bug above is actually fixable with a
+small patch, rather than just diagnosed. Progress so far:
+
+- Installed .NET 10 SDK locally on the spike VM (`dotnet-install.sh`, user-local, no
+  sudo) and cloned `Kareadita/Kavita` from GitHub. A baseline build of just
+  `Kavita.Server` succeeded, confirming the toolchain works.
+- Applied the one-line patch: `IdentityServiceExtensions.cs:241`,
+  `options.GetClaimsFromUserInfoEndpoint = true` → `false`.
+- **First build attempt (against `main` HEAD) hit an unrelated crash** —
+  `System.ArgumentNullException` on a null `TokenKey` inside JWT setup — caused by
+  version skew: `main` is many months ahead of the `v0.9.1.4` release our Docker
+  container is running, and the manual-migration chain isn't designed for that large
+  a jump against an existing database. Not a real finding, just a self-inflicted
+  confound — checked out the actual `v0.9.1.4` git tag instead (the patch survived
+  the checkout cleanly) and rebuilt against that; the TokenKey crash disappeared.
+- Copied the running container's `config/` (DB, settings, admin account) into a test
+  directory so the patched binary could reuse the existing OIDC settings without
+  redoing setup, stopped the Docker container to free port 5000, and ran the patched
+  build directly (framework-dependent, no Angular UI built — acceptable since this
+  is an auth-only test, not a full functional one).
+- Retried the OIDC login through the same Cloudflare Tunnel hostname. Got a **new**
+  error this time: `"No authentication handler is registered for the scheme
+  'OpenIdConnect'"` — meaning OIDC wasn't actually registered as enabled on the fresh
+  process at all. Leading unconfirmed hypothesis: the client secret may be encrypted
+  at rest using Kavita's JWT `TokenKey`, and since this fresh process logged
+  "Generating JWT TokenKey..." again (implying a **new** key rather than reusing
+  whatever key the original container used), the copied secret may be failing to
+  decrypt — which would make `oidcConfig.Enabled` compute as false. **Not confirmed**
+  — never got to check `/api/Settings` on the patched instance before losing
+  connectivity (below).
+
+**Then the spike VM and the whole Proxmox host became unreachable** (SSH timed out
+entirely; the public tunnel hostname returned Cloudflare's `530`, indicating the
+tunnel connector itself had dropped). Two hypotheses, neither confirmed as of this
+writing, actively being investigated by Matthew directly against the Proxmox host:
+
+- **Resource exhaustion**: this VM was sized for running the packaged app alone
+  (2 vCPU / 2GB was the spike recommendation earlier in this doc), not for also
+  running the .NET SDK, Roslyn's background compiler server, and MSBuild
+  concurrently with a live Kavita process. That's plausibly enough to have pushed a
+  2GB-class VM into OOM territory. If this is what happened, the fix is simply more
+  RAM before resuming any build work on this VM — build tooling alongside a running
+  app needs meaningfully more headroom than the app alone.
+- **Network-level block**: BTECH's own network already showed one instance of
+  targeted TLS interception in this same session (the `*.trycloudflare.com` quick
+  tunnel got MITM'd earlier — see the spike-plan section below). Today's workload
+  generated a lot more traffic than that one blocked request (a 240MB SDK download,
+  several git clones, a sustained tunnel connection) — plausible trigger for a
+  subnet-wide defensive block, if BTECH's firewall does that as a known behavior.
+  Checked whether this matched the separate, already-logged "recurring `/no-access`
+  lockout" issue from earlier project work — it doesn't; that one is an
+  application-level roster-entitlement API token problem on Reader sign-ins, unrelated
+  to network/firewall connectivity.
+
+**Next steps once access is restored:** bump the VM's RAM if resource exhaustion is
+confirmed as the cause; then, as the first diagnostic step before anything else,
+check `/api/Settings` on the patched instance to see whether `oidcConfig.secret` and
+`oidcConfig.enabled` actually came through the config copy correctly. If the secret
+didn't survive the copy, the cleanest fix is re-entering the OIDC secret directly
+against the patched instance (not copying it) so the `GetClaimsFromUserInfoEndpoint`
+patch can actually be tested in isolation, rather than confusing "config didn't
+transfer" with "the patch doesn't work."
+
 ## Spike plan (Proxmox VM)
 
 Once the VM is up and access is handed over:
