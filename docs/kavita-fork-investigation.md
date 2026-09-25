@@ -484,8 +484,10 @@ roster check *is* the real gate) - left as-is for this pass since narrowing
 access is always safer than widening it without discussion, but worth
 revisiting once the "kavita" product-registration question above is settled.
 
-**Also still open, deliberately not filed yet:** the upstream Kavita
-UserInfo-endpoint bug from the section above - the fix here didn't change
+**Filed upstream (2026-09-25):** [Kareadita/Kavita#4949](https://github.com/Kareadita/Kavita/issues/4949) -
+the UserInfo-endpoint bug from the section above, with the exact file/line
+diagnosis and the proposed minimal fix (make `GetClaimsFromUserInfoEndpoint`
+configurable). The fix built into the fork here didn't change
 that recommendation, just confirmed the whole chain works once it's patched.
 
 ## Spike plan (Proxmox VM)
