@@ -7,13 +7,17 @@ this one, not a subdirectory of it. Follows the exact same pattern as this
 repo's own `koodo-reader` → `iterverse_reader` fork: `origin` is the fork,
 `upstream` tracks `Kareadita/Kavita` directly, so `git fetch upstream` +
 merge/rebase stays available going forward. Scope: a full rebrand (new name,
-logo, "powered by" line removed or changed) rather than theme-only, following
-[camplight/nest](https://github.com/camplight/nest)'s PR #1 as the reference
-for how to do this without scattering changes through the codebase - see the
-fork-scoping section below for the ground rules this needs to follow to stay
-upstream-mergeable.
+logo, "powered by" line removed or changed) rather than theme-only, guided
+directly by `ad_labs`'s `design-system/` (the canonical Iterverse brand
+assets/tokens - see the Branding section below for the correction on the
+"Nest" reference this doc originally cited) - see the fork-scoping section
+below for the ground rules this needs to follow to stay upstream-mergeable.
+**Rebrand pass 1 done (2026-09-25)** - name, logo/favicon/PWA icons, and
+accent color all rebranded and visually verified; see "Rebrand pass 1" section
+near the end of this doc for exactly what changed, what's still unverified,
+and open follow-ups.
 **Author:** Matthew Foster, with Claude (research pass 2026-09-24, fork
-created 2026-09-25)
+created 2026-09-25, rebrand pass 1 2026-09-25)
 
 ## TL;DR
 
@@ -34,12 +38,18 @@ looked like they'd require deep forking:
   is designed to be per-product already (`product: "reader"` today), so gating
   Kavita the same way is plausibly **config + one small bridging Worker**, not
   a C# auth rewrite.
-- **Branding**: Kavita has a built-in CSS-variable theme system, and a fork
-  called **Nest** ([camplight/nest PR #1](https://github.com/camplight/nest/pull/1))
-  has already done exactly what we want — admin-configurable org name, logo,
-  and colors — while keeping a "Powered by Kavita" attribution footer. That PR
-  is worth reading directly as prior art before writing any of our own
-  branding patch.
+- **Branding**: Kavita has a built-in CSS-variable theme system for colors,
+  which covers most of "look like Iterverse" without touching source at all.
+  **Correction (2026-09-25):** this section originally cited a fork called
+  "Nest" (`camplight/nest`) as prior art for admin-configurable branding -
+  that turned out to be wrong. Checked its actual GitHub metadata while trying
+  to use it as a reference and found it's a fork of `camplight/orgops`, an
+  unrelated TypeScript project with no connection to Kavita. The claim was
+  never verified against the repo directly when first researched - a real
+  miss, caught only once actually needed. No working reference implementation
+  exists as far as this investigation has found; the rebrand proceeds directly
+  from `ad_labs`'s `design-system/` tokens/assets instead; see the "Rebrand"
+  section below.
 
 The one place this is a genuinely bigger lift than Reader, not a smaller one,
 is **infrastructure**: Kavita is a persistent process needing real compute and
@@ -133,13 +143,16 @@ most visual restyling without touching Kavita source at all — the same
 "swap token values, keep the plumbing" approach already used for `--btech-*`
 tokens in this repo.
 
-For anything theming can't reach (site name, logo asset, "powered by" line),
-there's a concrete precedent: **[Nest](https://github.com/camplight/nest)**, a
-Kavita fork that added an Admin → Branding page (org name, logo, colors) while
-keeping upstream attribution. [Read PR #1](https://github.com/camplight/nest/pull/1)
-directly before writing any of our own branding patch — it's the exact diff
-shape ("what did they touch to make branding admin-configurable") we'd want to
-either reuse, adapt, or deliberately diverge from with a documented reason.
+For anything theming can't reach (site name, logo asset, "powered by" line):
+no working reference fork was found (see the correction in the TL;DR above -
+a previously-cited "Nest" fork turned out to be unrelated to Kavita, an error
+caught only once the doc's own advice to "read it directly" was actually
+followed). This isn't a blocker - BTECH doesn't need Nest's actual feature
+anyway (a *runtime-configurable*, multi-tenant branding system); this is one
+fixed deployment with one fixed brand, so a direct, static rebrand (replacing
+Kavita's own hardcoded name/logo/colors with Iterverse's, guided by
+`ad_labs`'s `design-system/` tokens/assets) is both simpler and a better fit
+than building configurability nobody needs.
 
 Also worth a skim before publishing anything under a new name: Kavita has an
 open discussion on [3rd-party naming/trademark expectations for forks](https://github.com/Kareadita/Kavita/discussions/2949)
@@ -154,11 +167,12 @@ our diff from upstream as small and mechanically separable as possible:
 - **Prefer config over code everywhere it's offered.** Theme CSS files, OIDC
   settings, and per-library RBAC are all admin-configurable at runtime — none
   of that belongs in our fork's source at all.
-- **Isolate unavoidable source changes to a small, named surface.** If Nest's
-  approach (a dedicated Branding admin page) doesn't fully cover it, keep our
-  own additions in clearly-separate files/components rather than edits
-  scattered through core views — same principle CLAUDE.md already documents
-  for how `--btech-*` tokens were kept in Reader instead of renamed everywhere.
+- **Isolate unavoidable source changes to a small, named surface.** Keep
+  rebrand edits in clearly-separate files/components (a dedicated branding
+  module/constants file, not edits scattered through every view that happens
+  to say "Kavita") rather than touching the same logic upstream is actively
+  developing — same principle CLAUDE.md already documents for how `--btech-*`
+  tokens were kept in Reader instead of renamed everywhere.
 - **Never touch core auth/business logic in the fork itself.** Per the auth
   section above, entitlement logic should live in a Worker outside the
   Kavita codebase entirely. That's the single biggest lever for rebase safety
@@ -537,3 +551,91 @@ port.
   maintain (Access SaaS app + External Evaluation Worker) alongside Reader's
   existing one — operationally simple in isolation, but it's still one more
   moving part in the shared roster system.
+
+## Rebrand pass 1 (2026-09-25): name, icons, and accent color
+
+Done directly in the fork (`iterverse_library`, not this repo), guided by
+`ad_labs`'s `design-system/` as the source of truth for tokens/assets. Not
+yet committed as of this writing - see the note at the very end of this
+section.
+
+**Name.** "Kavita" → "Iterverse Library" everywhere it's genuinely this app's
+own display branding: page `<title>`, browser tab, the login/splash screen,
+the main nav header, `site.webmanifest`'s `name`/`short_name`, and the
+dynamic per-page title suffix (`(Iterverse Library)`). Centralized into one
+new file, `UI/Web/src/app/branding.ts` (`export const APP_NAME = 'Iterverse
+Library'`), referenced from the one place that had three separate literal
+occurrences (`kavita-title.strategy.ts`) rather than left as scattered
+strings - a future name change touches one file, not a grep-and-replace.
+
+**Deliberately untouched:** every occurrence of "Kavita" under the
+`kavita-plus`/`kavitaplus` naming (the vast majority of ~100 files a blind
+grep for "Kavita" turns up in `UI/Web/src`). That's Kavita's own real,
+separate paid metadata/scrobbling service this app can still talk to as a
+client - not this app's own display branding. Renaming those would break a
+real integration for no reason, same principle CLAUDE.md already documents
+for why `isEnableKoodoSync`/`KoodoFileSystemDB` stayed as-is in Reader.
+
+**Icons/logos.** Regenerated every favicon/PWA/in-app logo asset
+(`favicon.ico`, `favicon-{16,32}x{16,32}.png`, `apple-touch-icon.png`,
+`android-chrome-{192,256}.png`, `mstile-150x150.png`, `logo-{32,64}.png`,
+`logo.png`, `logo.svg`) directly from `ad_labs/design-system/assets/iterverse/
+{mark,favicon}.svg` via a one-off `sharp` rasterization script (not checked
+into either repo - a throwaway `/tmp` script, easy to reproduce if needed
+again for a size that was missed). Apple/Android icons got a solid white
+background per platform convention (transparent PNGs look wrong as home-
+screen icons); everything else stayed transparent, matching how each was
+already used. `browserconfig.xml`'s and `index.html`'s hardcoded tile colors
+were also updated to `--btech-red` (`#d22030`) - they were a stray, unrelated
+teal (`#4ac694`) that wasn't even Kavita's real accent color's source of
+truth (see below), just a hardcoded leftover in two static files.
+
+**Accent color.** Kavita's actual single source of truth for its teal
+accent (buttons, links, the login-screen highlight bar) is one CSS custom
+property, `--primary-color` in `UI/Web/src/theme/themes/dark.scss`, with
+three derived shade variables for hover/pressed states. Swapped the base to
+`--btech-red` and derived the three shades proportionally to Kavita's
+original shading ratios rather than guessing - the first derived shade came
+out within one hex digit of the design system's own official `--btech-red-
+dark` token, which was a good sanity check that the ratio-based approach was
+reasonable. This was a direct edit to Kavita's own shipped default theme
+(not the runs-at-startup `/config/themes/` drop-in mechanism the earlier
+"Branding: prior art" section above describes) - a deliberate choice, since
+the goal is for this to be the fork's actual out-of-the-box appearance, not
+an optional theme a student would have to go find and select themselves.
+
+**Verified how:** built the real Angular UI (`npm run build` in `UI/Web`,
+after `npm install` - this was the first time this fork's frontend was
+actually built; the whole earlier OIDC spike only ever ran the .NET backend
+alone), served the static output directly, and screenshotted/read the DOM
+text via the browser pane. Confirmed: correct spelling (a font at that
+screenshot's resolution made "Iterverse" visually ambiguous to the eye -
+double-checked via actual DOM text extraction, not just looking at the
+picture), correct favicon pixel content, and the red accent bar/mark reading
+as one consistent color story.
+
+**Not yet verified:** the nav header specifically (`nav-header.component.
+html`) only renders post-login, and there's no local backend available on
+this Mac (only on the spike VM) to actually reach a logged-in state.
+"Iterverse Library" is meaningfully longer than "Kavita" and the nav CSS has
+no explicit width/overflow handling on that label - worth an actual visual
+check against a real backend before assuming it fits at the `md` breakpoint.
+
+**Open decision, not yet acted on:** several settings/about-page surfaces
+still link out to Kavita's own wiki/GitHub/Discord for support - worth
+deciding whether BTECH users should land there (the real upstream project,
+still genuinely relevant since this fork is Kavita underneath) or be
+redirected to BTECH IT's own support channel instead, before this goes live.
+
+**Also confirmed unused, no action needed:** `assets/images/kavita-book-
+cropped.png` isn't referenced anywhere in the current UI source - safe to
+leave alone (not worth deleting speculatively without confirming it's truly
+dead everywhere, e.g. e2e tests), just noting it's not a rebrand concern.
+
+**Status of this work as of context running low this session:** all of the
+above is staged as an uncommitted diff in `iterverse_library` (`git status`
+shows exactly `branding.ts` new, plus the theme/icon/title files modified -
+no build artifacts, both `Kavita.Server/wwwroot/` and `UI/Web/dist/` are
+already gitignored). Should be committed before the next session picks this
+up, if it wasn't already done by the time this doc update itself was
+committed.
