@@ -117,7 +117,7 @@ Three pieces, roughly independent:
    comment on this distinction). Two ways to carry that check over to Kavita
    without touching Kavita's auth code:
    - An [Access External Evaluation policy rule](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/external-evaluation)
-     — a thin Worker that calls the same roster API (`product: "kavita"`,
+     — a thin Worker that calls the same roster API (`product: "library"`,
      reusing the existing per-product design) and returns allow/deny — gates
      the Access Application itself, before Kavita ever sees the request.
    - Or a claims-bridging Worker sits between Access and Kavita's OIDC config,
@@ -474,7 +474,7 @@ Fixed by adding `checkRosterEntitlement` (copied verbatim from this repo's
 `functions/lib/roster.ts`, same precedent as `access.ts`) directly into
 `kavita-oidc-bridge`'s `/authorize` handler: after Access verifies who someone
 is, the bridge now calls the same Iterverse roster service Reader's own
-`access.ts` calls, with `product: "kavita"` instead of `"reader"`, and rejects
+`access.ts` calls, with `product: "library"` instead of `"reader"`, and rejects
 before ever minting a code if the response isn't `entitled: true` - mirroring
 Reader's "reject before creating a session" pattern exactly.
 
@@ -493,28 +493,137 @@ reviewed against the identical logic Reader's own `access.ts` already runs in
 production, but hasn't been independently verified end-to-end the way the
 positive case has.
 
-**One open question, unconfirmed either way:** whether `iterverse_hub` (the
-roster service) needs `"kavita"` pre-registered as a known product, or treats
-that field as free-form/log-only. This is the first non-Reader caller of
-`checkRosterEntitlement` - worth checking with whoever owns `iterverse_hub`
-before trusting this in anything beyond a spike, in case entitled accounts
-get rejected specifically because Kavita as a product isn't recognized yet
-(which the code above wouldn't distinguish from a real "not entitled" - the
-same class of ambiguity the `/no-access` runbook in CLOUDFLARE.md already
-warns about for Reader).
+**Resolved (2026-09-25): `iterverse_hub` does require product pre-registration**
+- confirmed by reading `worker/src/entitlement.ts` directly. `product` is
+validated against a closed allowlist/branch set before anything else runs;
+an unregistered value falls through to `PRODUCT_KEYS.includes()`, fails, and
+returns `entitled: false` unconditionally - indistinguishable from a real
+"not entitled," the same ambiguity CLOUDFLARE.md's `/no-access` runbook
+already warns about for Reader. Registration was **not yet done** as of this
+writing - `entitlement.ts` needs a new branch, mirroring the existing
+`reader`/`chat` "any active enrollment" branches (lines 63/73), for
+`product === "library"`:
+```ts
+if (body.product === "library") {
+  return json({ entitled: await db.hasAnyActiveEnrollment(env.DB, email) });
+}
+```
+No DB migration needed - this is the any-enrollment rule, not the
+course-scoped `PRODUCT_KEYS` one. **Landed** in `iterverse_hub/worker/src/
+entitlement.ts` (lines 77-83), mirroring the `reader`/`chat` branches
+exactly - Library is a direct replacement for Reader, so it gets the same
+"any active Iterverse enrollment" entitlement rule Reader has always used,
+confirmed by Matthew. First edit attempt was blocked by this session's own
+tooling as a shared-resource change (it's live production infra every
+Iterverse product depends on); re-approved and applied on the second try.
 
-**Also still open:** whether the bridge's own gating Access Application
-should now be widened from "Student Login (OTP)" to something closer to
-Reader's own model (any OTP'd email, no policy-level allowlist, since the
-roster check *is* the real gate) - left as-is for this pass since narrowing
-access is always safer than widening it without discussion, but worth
-revisiting once the "kavita" product-registration question above is settled.
+**Naming note:** the product key is `"library"`, not `"kavita"` - matching
+how Reader's own key is `"reader"`, not `"koodo"`. The entitlement API
+shouldn't bake in the underlying open-source engine's name, since that's an
+implementation detail the product name has already diverged from once
+(Kavita is to Iterverse Library what Koodo is to Iterverse Reader).
+
+**Resolved: reusing "Student Login (OTP)" is correct, not a risk to fix.**
+Confirmed by Matthew - every Iterverse product meant for students uses that
+same policy. This doesn't conflict with `iterverse_hub`'s own README warning
+against shared policies (worth recording precisely, since it's easy to
+mis-cite): that warning is specifically about `access-sync.ts`, the
+mechanism that actively *pushes* roster membership into a policy for
+Packets/Scripts (edge-gated static sites with no entitlement check of their
+own) - the sync fully overwrites whatever policy id it's given, so sharing
+one there means two products clobber each other's roster on every sync.
+Reader and Library don't use that mechanism at all: they sit behind the
+shared OTP gate (which only proves "this is a real OTP'd email," nothing
+product-specific) and do their own `checkRosterEntitlement` call downstream
+for the actual gate. Nothing ever writes to "Student Login (OTP)," so
+sharing it carries none of the clobbering risk the README warns about.
 
 **Filed upstream (2026-09-25):** [Kareadita/Kavita#4949](https://github.com/Kareadita/Kavita/issues/4949) -
 the UserInfo-endpoint bug from the section above, with the exact file/line
 diagnosis and the proposed minimal fix (make `GetClaimsFromUserInfoEndpoint`
 configurable). The fix built into the fork here didn't change
 that recommendation, just confirmed the whole chain works once it's patched.
+
+**The `GetClaimsFromUserInfoEndpoint` patch itself landed in the fork's own
+source** (2026-09-25, `Kavita.Server/Extensions/IdentityServiceExtensions.cs:241`)
+- previously this was only ever tested on the spike VM's separate, throwaway
+Kavita clone, not in `iterverse_library` itself. Now the fork can actually
+complete a real OIDC login on its own, not just prove the concept elsewhere.
+
+## Rebrand pass 2 (2026-09-25): support links, Kavita+ banners, wiki links
+
+Follow-up to rebrand pass 1 above (name/icons/accent color) - this pass
+addressed the two items that section left open (support-link destinations,
+and now also Kavita+ banner visibility, which came up mid-pass).
+
+**Support surfaces now point at real BTECH channels, not Kavita's:**
+- `manage-system.component.html` (admin "About System" page): collapsed from
+  7 rows (homepage, wiki, Discord, donations, source, Weblate, feature-request
+  discussions) down to 3 - **Source** (github.com/Kareadita/Kavita, kept as the
+  one piece of GPL attribution/provenance - see below), **Support**
+  (mailto:it@btech.edu), and **Discord** (BTECH's own server,
+  discord.gg/hhj7aA4fkv, replacing Kavita's).
+- `version-update-modal`: the "update available" Help button now opens
+  `mailto:it@btech.edu` (was a wiki install-guide link); the "out of date"
+  modal's Discord button now points at BTECH's own Discord (was Kavita's) -
+  Matthew confirmed BTECH has a standing Discord worth wiring up here instead
+  of just redirecting to IT email.
+- The OIDC-provider-settings tooltip and the "how to update" modal copy both
+  had inline `wiki.kavitareader.com` links removed in favor of "Contact BTECH
+  IT" text (`identity-provider-oidc.provider-tooltip`,
+  `version-update-modal.out-of-date.description-2` in `en.json`).
+
+**GPL attribution consolidated into one sidebar footer link, replacing the
+Kavita+ donate banner.** `side-nav.component.html`'s `sidenav-bottom` block
+used to conditionally show a heart-icon "Donate to Kavita+" link to every
+user without an active Kavita+ license (i.e. everyone at BTECH, always) -
+this is also the one real "Kavita+ banner" a student could see and click by
+accident. Replaced with an unconditional, always-visible small "Powered by
+Kavita" link to `github.com/Kareadita/Kavita` - Matthew's suggested
+compromise for staying in good GPL standing (the investigation found the
+app previously had **no** in-app disclosure at all that it's derived from
+GPL-3.0-licensed Kavita, only the plain-text root `LICENSE` file) without
+scattering Kavita branding everywhere. This is now the only literal Kavita
+in-app reference outside of Kavita+'s own internal naming (see below) and
+the two feature-parity acknowledgments already in `en.json` copy. Root
+`LICENSE` file itself was never touched (GPL requirement, independent of
+any in-app UI).
+
+**Confirmed: Kavita+ upsell UI is already fully admin-gated, so "banners"
+came down to just the one item above.** Checked every place the app shows
+UI conditioned on *not* having an active Kavita+ license
+(`grep -rn "!.*hasActiveLicense"` across `UI/Web/src`) - only two hits: the
+sidenav Donate banner (handled above) and one `preference-nav` computed
+property already gated by role first. The actual Kavita+ settings tabs
+(`KavitaPlusLicense`, `Scrobbling`, `Metadata`, `ManageKavitaPlusActivity`)
+are all wrapped in `accountService.hasAdminRole()` checks in
+`settings.component.html` - students never see them regardless. Kavita+'s
+own internal naming (files, selectors, translation keys under
+`kavitaplus`/`kavita-plus`) was deliberately left alone per rebrand pass 1's
+original decision (real separate paid service, not this app's branding).
+
+**Removed ~14 remaining "learn more about this feature" wiki links** with no
+Iterverse/BTECH equivalent documentation to swap in instead (Collections,
+Bookmarks, Scanner, reading lists, series relationships, CBL import, reading
+profiles, external sources, media issues, font manager, OPDS clients, admin
+usage-stats info, directory-picker help) - Matthew's call: remove rather than
+leave pointing at a different product's docs, since BTECH has no parallel
+docs yet for most of these. Consumers cleaned up across ~15 component files;
+`_models/wiki.ts`'s `WikiLink` enum pruned down to only the two entries
+Kavita+'s own components still use (`KavitaPlus`, `KavitaPlusFAQ`). The same
+two hardcoded wiki links duplicated in ~25 other locale JSON files (plus one
+extra one only present in the Dutch translation) were translated to "Contact
+BTECH IT" in each language. **Known gap, left as-is deliberately (English-only
+institution, low priority):** one non-English-only translation string
+(`font-manager.description`) leaves a grammatically awkward blank gap in 21
+locales where a wiki link used to sit - English itself is clean. Full
+TypeScript build (`tsc --noEmit`) and production build (`ng build`) both
+pass clean after this pass.
+
+**Not yet verified:** same limitation as rebrand pass 1 - no live backend
+locally, so none of this pass's changes have been visually confirmed in a
+running app (only compiled/built). The nav-header overflow question from
+pass 1 is still open for the same reason.
 
 ## Spike plan (Proxmox VM)
 

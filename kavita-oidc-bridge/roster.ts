@@ -4,14 +4,16 @@
 // service's own codebase rather than centralized. Keep in sync with the
 // original if it ever changes there.
 //
-// One real difference from Reader's usage: `product` here is "kavita",
+// One real difference from Reader's usage: `product` here is "library",
 // not "reader" - this is the first non-Reader caller of this check.
-// Whether iterverse_hub needs "kavita" pre-registered as a known product
-// on its own side (vs. treating the field as free-form/log-only) hasn't
-// been confirmed - if entitled BTECH accounts unexpectedly get bounced,
-// check that first, the same way CLOUDFLARE.md's `/no-access` runbook
-// says to check ROSTER_SERVICE_KEY/roster-service health before assuming
-// a real data gap.
+// Named for the product ("Iterverse Library"), not the underlying engine
+// ("Kavita"), matching how Reader's own key is "reader" and not "koodo" -
+// the entitlement API shouldn't bake in an implementation detail that
+// could change under the product name later.
+// Confirmed required: iterverse_hub's entitlement.ts validates `product`
+// against a closed allowlist/branch set, so "library" must be registered
+// there (see its own "reader"/"chat" any-active-enrollment branches) or
+// every login here is unconditionally denied.
 export async function checkRosterEntitlement(env: Env, email: string): Promise<boolean> {
   const response = await fetch(`${env.ROSTER_API_URL}/api/entitlement/check`, {
     method: "POST",
@@ -19,7 +21,7 @@ export async function checkRosterEntitlement(env: Env, email: string): Promise<b
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.ROSTER_SERVICE_KEY}`,
     },
-    body: JSON.stringify({ email, product: "kavita" }),
+    body: JSON.stringify({ email, product: "library" }),
   });
   if (!response.ok) {
     // Distinguishes a roster-service/auth failure (bad ROSTER_SERVICE_KEY,
