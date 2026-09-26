@@ -15,7 +15,11 @@ below for the ground rules this needs to follow to stay upstream-mergeable.
 **Rebrand pass 1 done (2026-09-25)** - name, logo/favicon/PWA icons, and
 accent color all rebranded and visually verified; see "Rebrand pass 1" section
 near the end of this doc for exactly what changed, what's still unverified,
-and open follow-ups.
+and open follow-ups. **Rebrand pass 2 done (2026-09-25)** - support links,
+GPL attribution, Kavita+ banner, wiki-link cleanup; see that section.
+**Deployed and live (2026-09-26):** `https://library.iterverse.net`, real
+OIDC login confirmed end-to-end with correct role sync - see "Deployment"
+section for the full writeup and what's still open.
 **Author:** Matthew Foster, with Claude (research pass 2026-09-24, fork
 created 2026-09-25, rebrand pass 1 2026-09-25)
 
@@ -627,6 +631,144 @@ pass clean after this pass.
 locally, so none of this pass's changes have been visually confirmed in a
 running app (only compiled/built). The nav-header overflow question from
 pass 1 is still open for the same reason.
+
+## Deployment (2026-09-26)
+
+The spike VM (`192.168.200.21`, the same Proxmox box the auth spike used)
+became the real deployment rather than standing up a new one - Matthew's
+call, on the basis that it was already reachable, already had the Cloudflare
+Tunnel wired up, and there was no reason to duplicate that. All throwaway
+spike artifacts were removed first: the stopped `kavita` container and its
+image, `~/kavita-src`/`~/kavita-patched-publish`/`~/kavita-patched-test`, the
+`update_oidc*.py` scripts, old cloudflared logs - a leftover `dotnet` process
+from the old spike was also still squatting on port 5000 directly (not even
+via Docker) and had to be killed before the real container could bind it.
+
+**Build pipeline**, run directly on the VM (no CI): `git clone` the public
+`cuaquero/iterverse_library` repo (`develop` branch) directly onto the VM per
+Matthew's suggestion, rather than pushing a local working copy over - keeps
+the VM's copy always traceable to a real commit. Needed Node 24.15+ (24.9
+installed first, hit Angular CLI's minimum-version gate, had to bump) and the
+.NET 10 SDK (already present from the original spike) in userspace, no root
+needed for either. Mirrors the project's own CI (`develop-workflow.yml`) but
+trimmed to build only `linux-x64` (skipping the arm/arm64 legs the real CI
+does for multi-arch Docker Hub publishing - pointless on a single x64 VM):
+`npm run prod` in `UI/Web` → rsync the Angular output into
+`Kavita.Server/wwwroot` → a trimmed one-RID version of the repo's own
+`monorepo-build.sh` (dotnet publish, self-contained, tarball) → `docker build`
+against the repo's own `Dockerfile`. Container runs with local-disk bind
+mounts for both the book library and Kavita's own config/DB (Matthew's call,
+matching the original spike plan's "start with local disk" option over an R2
+mount), port 5000, `--restart unless-stopped`.
+
+**Cloudflare side:** no new Access Application needed for
+`library.iterverse.net` itself - real authentication happens entirely at
+`kavita-oidc-bridge`'s own `/authorize` step (already behind its own Access
+Application), so gating the Library hostname too would just add a redundant
+OTP prompt before even reaching Kavita's login screen (Matthew's call, after
+I flagged the tradeoff). Just needed one **Published application route**
+(Cloudflare's current name for what used to be called "Public Hostname") on
+the existing named Tunnel (id `166d26ef-6dbc-474b-b57c-0ed3e146b064`):
+`library.iterverse.net` → `http://localhost:5000`. The **Private Network
+Routes** tab (a different feature, for WARP-client access to private IP
+ranges) is easy to land on by mistake if the dashboard's naming has shifted
+since - it has no Service field, which is the tell.
+
+**`kavita-oidc-bridge` moved into this fork** (2026-09-26,
+`iterverse_library/kavita-oidc-bridge/`, no longer in this repo) - Matthew's
+call: this repo is slated for retirement once Library replaces it, so the
+bridge now lives with the product it actually serves rather than a repo with
+an end date. `ALLOWED_REDIRECT_URI` updated from the placeholder
+`reader-test.iterverse.net` to the real `library.iterverse.net/signin-oidc`,
+`CLIENT_SECRET` rotated to a freshly generated value (the original was never
+exposed to me, so a clean rotation was simpler than trying to recover it) -
+redeployed and confirmed working from the new location.
+
+**OIDC config on the Kavita side** lives under Settings → OpenID Connect (not
+obviously named - easy to go looking under "Auth Keys" instead, which is
+unrelated OPDS/API-key stuff). One real gotcha: **saving the OIDC settings
+does nothing until the container restarts** - the settings page's own
+"restart required" banner is not just a suggestion, `IdentityServiceExtensions`
+reads `Authority`/`ClientId`/`Secret` once at ASP.NET startup, not per-request.
+First save attempt looked successful in the UI but never actually reached the
+server (confirmed via container logs - no `POST /api/settings` at all, only
+`GET`s); second attempt did land, followed by a manual `docker restart`.
+Field values used: Authority `https://kavita-oidc-bridge.iterverse.net`,
+Client ID `34722feb3e1b845720953e0631fd36fb`, the rotated secret, Roles Claim
+left at Kavita's own default (already matches the bridge's
+`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`), Roles Prefix
+blank (bridge sends exact role names, `Admin`/`Login`, no prefix), Default
+Roles set to `Login`. **Disable Password Authentication left OFF
+deliberately** - turning it on before OIDC was confirmed working would have
+risked locking out the just-created local `btech-admin` bootstrap account
+with no fallback; revisit once OIDC is trusted.
+
+**Confirmed working end-to-end (2026-09-26):** a real login from Matthew's
+own BTECH account, via `docker logs`: `GET /oidc/login` → 302 out to Access →
+bridge → back, `Creating new user from OIDC: matthew.foster@btech.edu`,
+`Syncing access roles for user 2, found roles ["Admin","Login"]`, admin
+access correctly granted. This closes the two verification gaps rebrand pass
+1/2 left open:
+- **Nav header does not overflow** with "Iterverse Library" - confirmed via
+  screenshot, plenty of room next to search/icons/username.
+- **Roster-entitlement positive case** now verified against the real
+  deployment, not just the spike. **Negative case (a non-entitled email
+  correctly getting `access_denied`) is still unverified** - still no
+  non-entitled test account available.
+
+Two harmless warnings appear in the logs on every login -
+`Scope offline_access is configured, but not supported by your OIDC
+provider. Skipping` and the same for `roles` - because the bridge's discovery
+document only advertises `scopes_supported: ["openid","email","profile"]`.
+Cosmetic only: the bridge ignores whatever `scope` Kavita actually requests
+and always returns the full claim set regardless, so nothing is lost by the
+scopes being "skipped." Could silence this by adding `offline_access`/`roles`
+to the discovery doc's `scopes_supported` list, but there's no functional
+reason to.
+
+**Nav header rebranded properly (2026-09-26):** the header showed the
+product name as plain white text - not wrong exactly (matches Reader's own
+"Sign in to Iterverse Reader" precedent), but Matthew wanted it to match the
+real Iterverse header styling used elsewhere. Checked `ad_labs`'s actual
+running header (`pages/index.html`) as the real precedent rather than just
+`brand.md`'s written spec - it renders the two-tone "iter" (bold)/"verse"
+(light) wordmark inline as SVG, lowercase, with the product-specific word
+(there, "Labs") kept entirely separate from the styled wordmark rather than
+folded into it. Applied the same split here: `iter`/`verse` now render with
+the weight/color split, "Library" stays a plain separate word after it. One
+adjustment from `brand.md`'s own light-background example: **on a dark
+navbar, "iter" cannot be red** (`brand.md`'s own documented rule - red type
+doesn't have enough contrast on a dark surface) - both halves render in white
+here instead, split by weight and opacity only (700/`#fff` vs.
+300/`rgba(255,255,255,.62)`), not by color. New `PRODUCT_SUFFIX` constant
+added alongside `APP_NAME` in `branding.ts` for this - the styled portion is
+always literally "iterverse", never the specific product name.
+
+**Known network gotcha, worth remembering:** Tailscale's own DNS resolution
+interfered with public resolution of the brand-new `library.iterverse.net`
+record on at least one machine, even though every public resolver (1.1.1.1,
+8.8.8.8, 9.9.9.9) had the correct answer the whole time - toggling Tailscale
+off fixed the browser-side lookup, but also cuts off SSH access to the VM
+itself (a private `192.168.200.0/24` address, only reachable through
+Tailscale). If DNS for an `iterverse.net` subdomain seems broken on a
+BTECH-IT machine specifically, check Tailscale before assuming Cloudflare/DNS
+propagation - this is a client-side DNS conflict, not a real infrastructure
+problem.
+
+**Still open:**
+- Negative roster-entitlement case (above).
+- **Migrate the existing book catalog from Reader into Library** - Reader's
+  catalog lives in R2 (this repo's `functions/api/books/`, backed by D1 +
+  R2 storage); Library's is currently just an empty local-disk folder on the
+  VM. No migration plan written yet - needs figuring out how to pull the R2
+  objects down and get them into Kavita's expected library folder structure
+  (and whether Kavita's own scanner/metadata-matching handles the existing
+  file organization as-is, or needs the `Author/Book Title` layout
+  `bulkUpload.tsx` uses on the Reader side).
+- Dedicated Access Policy for `kavita-oidc-bridge` - resolved as unnecessary,
+  see the "Student Login (OTP)" section above; nothing further needed.
+- `GetClaimsFromUserInfoEndpoint` patch - already landed in the fork's own
+  source (see above), separate from this deployment.
 
 ## Spike plan (Proxmox VM)
 
