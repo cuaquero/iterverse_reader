@@ -210,6 +210,14 @@ not add them, this models **one shared catalog** every signed-in user reads
 from — not a per-student personal library. See
 `migrations/0003_books_catalog.sql`.
 
+**Migration source for Iterverse Library:** this is the catalog that needs to
+move over to the Kavita fork's own local-disk library folder (see
+`docs/kavita-fork-investigation.md`'s "Deployment" section, "Still open") -
+`GET /api/books` for the metadata list, `GET /api/books/:id/file` to stream
+each book down (R2 keys are `books/{id}/...`, deterministic per book/cover).
+Not yet planned: what folder layout Kavita's own scanner expects the
+downloaded files in.
+
 Routes:
 - `GET /api/books` — list catalog metadata. Any authenticated user.
 - `GET /api/books/:id` — one book's metadata. Any authenticated user.

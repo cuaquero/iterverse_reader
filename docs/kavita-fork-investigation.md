@@ -18,8 +18,12 @@ near the end of this doc for exactly what changed, what's still unverified,
 and open follow-ups. **Rebrand pass 2 done (2026-09-25)** - support links,
 GPL attribution, Kavita+ banner, wiki-link cleanup; see that section.
 **Deployed and live (2026-09-26):** `https://library.iterverse.net`, real
-OIDC login confirmed end-to-end with correct role sync - see "Deployment"
-section for the full writeup and what's still open.
+OIDC login confirmed end-to-end with correct role sync, and the
+roster-entitlement rejection path confirmed too (a non-rostered account
+correctly gets bounced with `access_denied`/`not_entitled`) - see
+"Deployment" section for the full writeup. **Only remaining open item:
+migrating the existing book catalog over from Reader** - nothing else left
+on the auth/rebrand/deployment side.
 **Author:** Matthew Foster, with Claude (research pass 2026-09-24, fork
 created 2026-09-25, rebrand pass 1 2026-09-25)
 
@@ -712,9 +716,12 @@ access correctly granted. This closes the two verification gaps rebrand pass
 - **Nav header does not overflow** with "Iterverse Library" - confirmed via
   screenshot, plenty of room next to search/icons/username.
 - **Roster-entitlement positive case** now verified against the real
-  deployment, not just the spike. **Negative case (a non-entitled email
-  correctly getting `access_denied`) is still unverified** - still no
-  non-entitled test account available.
+  deployment, not just the spike. **Negative case also confirmed
+  (2026-09-26)** - a real login attempt from a non-rostered account
+  correctly surfaced `error: 'access_denied', error_description:
+  'not_entitled'` in the UI, exactly matching `handleAuthorize`'s
+  rejection path (rejects before ever minting a code). Both directions of
+  the entitlement check are now proven against the real deployment.
 
 Two harmless warnings appear in the logs on every login -
 `Scope offline_access is configured, but not supported by your OIDC
@@ -756,7 +763,6 @@ propagation - this is a client-side DNS conflict, not a real infrastructure
 problem.
 
 **Still open:**
-- Negative roster-entitlement case (above).
 - **Migrate the existing book catalog from Reader into Library** - Reader's
   catalog lives in R2 (this repo's `functions/api/books/`, backed by D1 +
   R2 storage); Library's is currently just an empty local-disk folder on the
