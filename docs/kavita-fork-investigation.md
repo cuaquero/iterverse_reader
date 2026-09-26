@@ -21,9 +21,12 @@ GPL attribution, Kavita+ banner, wiki-link cleanup; see that section.
 OIDC login confirmed end-to-end with correct role sync, and the
 roster-entitlement rejection path confirmed too (a non-rostered account
 correctly gets bounced with `access_denied`/`not_entitled`) - see
-"Deployment" section for the full writeup. **Only remaining open item:
-migrating the existing book catalog over from Reader** - nothing else left
-on the auth/rebrand/deployment side.
+"Deployment" section for the full writeup. **Book migration also done
+(2026-09-26)** - all 123 books moved over from Reader's catalog; see "Book
+migration" section for what turned out to be a much longer story than
+"copy the files" (a wrong default setting, a title-parsing heuristic tuned
+for manga, and a duplicate-title collision). **Nothing left open** on the
+auth/rebrand/deployment/content side of this project.
 **Author:** Matthew Foster, with Claude (research pass 2026-09-24, fork
 created 2026-09-25, rebrand pass 1 2026-09-25)
 
@@ -762,19 +765,129 @@ BTECH-IT machine specifically, check Tailscale before assuming Cloudflare/DNS
 propagation - this is a client-side DNS conflict, not a real infrastructure
 problem.
 
-**Still open:**
-- **Migrate the existing book catalog from Reader into Library** - Reader's
-  catalog lives in R2 (this repo's `functions/api/books/`, backed by D1 +
-  R2 storage); Library's is currently just an empty local-disk folder on the
-  VM. No migration plan written yet - needs figuring out how to pull the R2
-  objects down and get them into Kavita's expected library folder structure
-  (and whether Kavita's own scanner/metadata-matching handles the existing
-  file organization as-is, or needs the `Author/Book Title` layout
-  `bulkUpload.tsx` uses on the Reader side).
+**Still open (as of this section, 2026-09-26 morning):**
+- ~~Migrate the existing book catalog from Reader into Library~~ - **done, see
+  "Book migration" section below.**
 - Dedicated Access Policy for `kavita-oidc-bridge` - resolved as unnecessary,
   see the "Student Login (OTP)" section above; nothing further needed.
 - `GetClaimsFromUserInfoEndpoint` patch - already landed in the fork's own
   source (see above), separate from this deployment.
+
+## Book migration (2026-09-26)
+
+All 123 books moved over from Reader's catalog into the real deployment.
+What looked like a simple "copy files from R2 to disk" task turned into a
+genuine debugging session - three unrelated problems stacked on top of each
+other, and the fix for the first two silently did nothing until the third
+was found.
+
+**Getting the files out of Reader didn't need Reader at all.** Queried this
+repo's own D1 database directly (`wrangler d1 execute btech-books --remote`)
+for the full `books` table (123 rows, 95 epub + 28 pdf, ~1.47GB, every row
+had a non-null author/cover) rather than hitting the live `/api/books` HTTP
+API - no auth/session needed, and `wrangler r2 object get
+btech-books-files/<file_key> --file <dest> --remote` pulled every file
+directly. Zero failures, all 123 downloaded clean.
+
+**Folder layout: one folder per book, not `Author/Book Title`.** The
+original assumption (matching Reader's own `bulkUpload.tsx` convention) was
+wrong for this catalog - Kavita's parser derives its grouping ("Series")
+from the file/folder text itself for standalone books, and grouping every
+book by author would have merged every book from the same author (e.g. all
+the Packt-published titles) into one "series." Used `<Title>/<Title>.<ext>`
+instead, one folder per book, so each becomes its own independent entry.
+
+**Problem 1 (root cause, found last): the Library's "Enable Metadata"
+setting defaults to off when creating a library.** This single setting
+explains everything that looked broken before it was found - with metadata
+off, Kavita never reads ComicInfo.xml, embedded EPUB/PDF metadata, or
+anything else; it parses purely from the raw filename. Every fix attempted
+before finding this (see below) had zero effect, because Kavita was never
+even looking at the data being fixed. **Settings → Libraries → Edit → check
+"Enable Metadata (ComicInfo/Epub/PDF)"** - not obvious from the name alone
+that this gates so much, worth remembering for any future library added
+here.
+
+**Problem 2: Kavita's title-to-series fallback is tuned for manga, and
+misfires badly on real book titles.** With metadata off (before Problem 1
+was found), the scanner picked up only 47 of 123 files - `Found 47 Series
+that need processing`, with 76 explicit `Unable to parse any meaningful
+information out of file ...` errors in the logs for the rest (123 − 47 = 76,
+exactly). Root cause, traced into `Kavita.Services/BookService.cs`'s
+`ApplySeriesFallbacks`: when a book has no series metadata, Kavita derives
+one by running `Parser.ParseSeries(info.Title, LibraryType.Manga)` -
+hardcoded to Manga rules regardless of the library's actual configured
+type - which treats any number in the title as a volume/chapter marker and
+strips it plus everything after. "Windows 11 for Enterprise Administrators"
+became series "Windows"; "Mastering Windows Server 2022 4th Edition" became
+"Mastering Windows Server". Titles the heuristic couldn't find any
+volume-like number in failed to parse at all (the 76 errors).
+
+Fixing this needed the actual `Series` metadata field set explicitly, and
+where that has to live differs by format:
+- **EPUB:** an *external* `ComicInfo.xml` sidecar is **not** read by
+  `BookParser.cs` (it never calls the shared `DefaultParser.UpdateFromComicInfo`
+  the other parsers use) - confirmed empirically, not just from reading the
+  code, since a ComicInfo.xml sidecar had zero effect on grouping. The actual
+  fix: embed a `<meta name="calibre:series" content="{exact title}"/>` tag
+  directly in each EPUB's own OPF (`Kavita.Services/BookService.cs`'s
+  `ApplyEpub2Metadata` reads this exact tag name), rewritten with Python's
+  `zipfile` module (mimetype re-added first and STORED per the EPUB/OCF
+  spec, everything else DEFLATED - `zipfile.testzip()` + a full
+  `mimetype`-position check on all 95 files caught one that needed a second
+  pass). One real gotcha: several source EPUBs already had *other*
+  `calibre:series_index`/`calibre:rating` tags from their original
+  publisher/Calibre packaging - a naive `"calibre:series" in text` substring
+  check false-positived on `calibre:series_index` (contains the same
+  substring) and skipped one file entirely; fixed by checking for the exact
+  `name="calibre:series"` attribute instead.
+- **PDF:** `PdfParser.cs` *does* call `UpdateFromComicInfo`, so a
+  `ComicInfo.xml` sidecar with `<Title>`/`<Series>`/`<Writer>` worked
+  correctly from the start for all 28 PDFs, once metadata was actually
+  enabled.
+
+**Problem 3: one genuine duplicate-title collision, and a red herring
+disambiguator.** Two different books share the literal title "Steve Jobs"
+(Karen Blumenthal's YA biography and Walter Isaacson's well-known one) -
+different authors, different files, correctly assigned separate folders by
+the download script's own collision handling (`Steve Jobs` /
+`Steve Jobs (2)`). Once metadata was enabled, both books' `Series` still
+came out identical (matching the raw shared title), merging them into one
+series with two chapters. First attempt at disambiguating used a
+parenthetical suffix (`Steve Jobs (2)`) - **Kavita strips any `(...)`
+content as a "release tag holder"** (`Parser.RemoveEditionTagHolders`,
+matches things like `(Digital)`/`(Scan)` generically, not just
+edition-specific patterns), silently undoing the fix. Second attempt used
+plain text with no brackets (`Steve Jobs Isaacson`) instead - correct fix,
+but needed applying to *two* places for this one book: the embedded EPUB
+`calibre:series` tag AND a stale `ComicInfo.xml` sidecar (left over from an
+earlier, ultimately-unnecessary fix attempt made before Problem 1 was
+found) that still had the old colliding value and was silently overriding
+the embedded metadata.
+
+**Also found and fixed along the way:** a delete-and-recreate of the
+Library is not equivalent to a from-empty first scan for series that
+changed *name* between scans without their `FolderPath` changing - an
+in-place Force Scan (not a delete+recreate) left 18 *stale* Series rows
+behind, each pointing at the same `FolderPath` as a newer, correctly-named
+one (e.g. both `Windows` and `Windows 11 for Enterprise Administrators`
+existed simultaneously, same folder). Kavita's scan-cleanup logic appears to
+match on name, not folder, for deciding what counts as "the same" series
+across scans. A full delete+recreate of the library resolved it cleanly
+each time it was tried.
+
+**Final state, verified directly against Kavita's own SQLite database
+(`~/iterverse-library-data/config/kavita.db` on the VM, not just the admin
+UI's book count) rather than trusting scan-summary log lines, which turned
+out to undercount inconsistently across different scan types:** 123 Series,
+123 Chapters, zero duplicate `FolderPath` values. **One known cosmetic
+loose end:** "Practical Programming" (a PDF) shows up with series name
+"Untitled" despite its `ComicInfo.xml` correctly specifying
+`<Series>Practical Programming</Series>` - traced into `PdfParser.cs`'s
+explicit `comicInfo.Series` read-through far enough to confirm it *should*
+work, but not far enough to find why this one specific PDF doesn't behave
+like the other 27. Cheaper to just rename it by hand in the admin UI than
+to keep digging for one book.
 
 ## Spike plan (Proxmox VM)
 
