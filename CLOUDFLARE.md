@@ -38,11 +38,15 @@ Config lives in `wrangler.jsonc` at the repo root. Bindings there:
 `ROSTER_API_URL`.
 
 **Unrelated to Reader, in the same shared account:** a Zero Trust Access
-Application named `Kavita Spike OIDC` and a Cloudflare Tunnel, both created for
-the Kavita fork investigation (`docs/kavita-fork-investigation.md`), pointed at
-a throwaway Proxmox VM rather than anything in this repo. Don't confuse them
-with Reader's own Access Application when browsing the Zero Trust dashboard -
-they're disposable spike infrastructure, not part of this deployment.
+Application named `Kavita Spike OIDC` and a Cloudflare Tunnel (id
+`166d26ef-6dbc-474b-b57c-0ed3e146b064`), both created for the Kavita fork
+investigation (`docs/kavita-fork-investigation.md`), pointed at a Proxmox VM
+(`192.168.200.21`) rather than anything in this repo. Don't confuse them with
+Reader's own Access Application when browsing the Zero Trust dashboard.
+**No longer disposable as of 2026-09-26:** that same VM/tunnel now hosts the
+actual `iterverse_library` deployment (`library.iterverse.net`), not just a
+throwaway spike - see the investigation doc's deployment section before
+tearing anything down here.
 
 ## Current status: live
 

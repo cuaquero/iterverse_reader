@@ -429,10 +429,13 @@ via Cloudflare's own docs. Access's native Groups/policies are simply not
 exposed as an OIDC claim to a downstream SaaS app - a real gap in the model,
 not a missing checkbox.
 
-**The fix: `kavita-oidc-bridge`, a new standalone Cloudflare Worker** (new
-top-level directory in this repo, deployed as its own Worker - NOT part of
-this repo's `functions/`/Pages deployment, kept clearly separate per
-CLOUDFLARE.md's note). It's a minimal OIDC provider: Kavita's `authority` now
+**The fix: `kavita-oidc-bridge`, a new standalone Cloudflare Worker** (deployed
+as its own Worker - NOT part of this repo's `functions/`/Pages deployment,
+kept clearly separate per CLOUDFLARE.md's note). **Moved (2026-09-26) to
+`iterverse_library/kavita-oidc-bridge/`** - it started here since it borrowed
+`access.ts`/`roster.ts` verbatim from this repo's own `functions/lib/`, but
+this repo (Reader/Koodo) is slated for retirement once Library takes over, so
+it now lives alongside the product it actually serves. It's a minimal OIDC provider: Kavita's `authority` now
 points at this bridge instead of Access directly, but the actual
 authentication is still 100% Access - the bridge's own `/authorize` route
 sits behind a normal Access Application (self-hosted, OTP, same pattern as
